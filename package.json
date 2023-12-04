@@ -1,0 +1,41 @@
+{
+  "name": "@express-worker/app",
+  "version": "0.0.2",
+  "description": "Express-style routing for Service Workers",
+  "main": "dist/express-worker.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "format": "prettier --config .prettierrc \"**/*.{ts,tsx}\" --write",
+    "build": "parcel build --no-scope-hoist"
+  },
+  "express-worker": "dist/express-worker.js",
+  "types": "dist/express-worker.d.ts",
+  "targets": {
+    "express-worker": {
+      "source": "./src/index.ts",
+      "distDir": "./dist"
+    },
+    "types": {
+      "source": "./src/index.ts",
+      "distDir": "./dist"
+    }
+  },
+  "author": "Michael Puckett <michael@puckett.contact>",
+  "license": "MIT",
+  "dependencies": {
+    "path-to-regexp": "^6.2.1"
+  },
+  "devDependencies": {
+    "@parcel/packager-ts": "^2.10.3",
+    "@parcel/transformer-typescript-tsc": "^2.10.3",
+    "@parcel/transformer-typescript-types": "^2.10.3",
+    "parcel": "^2.10.3",
+    "typescript": "^5.3.2"
+  }
+}
