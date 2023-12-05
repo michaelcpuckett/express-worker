@@ -1,16 +1,20 @@
-interface ExpressWorkerRequest extends Request {
-    params?: Record<string, string>;
+export interface ExpressWorkerAdditionalParams {
+    [key: string]: unknown;
 }
-type ExpressWorkerResponse = Omit<Response, 'body'> & {
+export type ExpressWorkerRequest<T extends ExpressWorkerAdditionalParams> = Request & {
+    params?: Record<string, string>;
+} & T;
+export type ExpressWorkerResponse = Omit<Response, 'body'> & {
     body: string;
 };
-interface Handler {
-    (req: ExpressWorkerRequest, res: ExpressWorkerResponse): void | Promise<void>;
+export interface ExpressWorkerHandler<T extends ExpressWorkerAdditionalParams> {
+    (req: ExpressWorkerRequest<T>, res: ExpressWorkerResponse): void | Promise<void>;
 }
 export class ExpressWorker {
     constructor();
-    get(path: string, handler: Handler): void;
-    post(path: string, handler: Handler): void;
+    get<T extends ExpressWorkerAdditionalParams>(path: string, handler: ExpressWorkerHandler<T>): void;
+    post<T extends ExpressWorkerAdditionalParams>(path: string, handler: ExpressWorkerHandler<T>): void;
+    use<T extends ExpressWorkerAdditionalParams>(handler: ExpressWorkerHandler<T>): void;
     handleFetch(event: Event): void;
     isMethodEnum(method: string): method is 'GET' | 'POST';
 }
