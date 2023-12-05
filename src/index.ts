@@ -1,14 +1,14 @@
 import { pathToRegexp } from 'path-to-regexp';
 
-interface ExpressWorkerRequest extends Request {
+export interface ExpressWorkerRequest extends Request {
   params?: Record<string, string>;
 }
 
-type ExpressWorkerResponse = Omit<Response, 'body'> & {
+export type ExpressWorkerResponse = Omit<Response, 'body'> & {
   body: string;
 };
 
-interface Handler {
+export interface ExpressWorkerHandler {
   (req: ExpressWorkerRequest, res: ExpressWorkerResponse): void | Promise<void>;
 }
 
@@ -24,11 +24,11 @@ export class ExpressWorker {
     self.addEventListener('fetch', this.boundFetchHandler);
   }
 
-  get(path: string, handler: Handler) {
+  get(path: string, handler: ExpressWorkerHandler) {
     this.paths.GET.set(path, handler);
   }
 
-  post(path: string, handler: Handler) {
+  post(path: string, handler: ExpressWorkerHandler) {
     this.paths.POST.set(path, handler);
   }
 
