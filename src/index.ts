@@ -4,26 +4,32 @@ export interface ExpressWorkerAdditionalParams {
   [key: string]: unknown;
 }
 
-export type ExpressWorkerRequest<T extends ExpressWorkerAdditionalParams> =
-  Request & {
-    params?: Record<string, string>;
-  } & T;
-
-export type ExpressWorkerResponse = Omit<Response, 'body'> & {
-  body: string;
+export type ExpressWorkerRequest = Request & {
+  params?: Record<string, string>;
 };
 
-export interface ExpressWorkerHandler<T extends ExpressWorkerAdditionalParams> {
-  (
-    req: ExpressWorkerRequest<T>,
-    res: ExpressWorkerResponse,
-  ): void | Promise<void>;
+export type ExpressWorkerResponse = Omit<Omit<Response, 'body'>, 'status'> & {
+  body: string;
+  status: number;
+  end: () => void;
+  _ended: boolean;
+};
+
+export interface ExpressWorkerHandler {
+  (req: ExpressWorkerRequest, res: ExpressWorkerResponse): void | Promise<void>;
 }
 
+type PathArray = [string, ExpressWorkerHandler][];
+
 export class ExpressWorker {
-  private paths = {
-    GET: new Map(),
-    POST: new Map(),
+  private paths: {
+    GET: PathArray;
+    POST: PathArray;
+    USE: ExpressWorkerHandler[];
+  } = {
+    GET: [],
+    POST: [],
+    USE: [],
   };
 
   private boundFetchHandler = this.handleFetch.bind(this);
@@ -32,45 +38,45 @@ export class ExpressWorker {
     self.addEventListener('fetch', this.boundFetchHandler);
   }
 
-  get<T extends ExpressWorkerAdditionalParams>(
-    path: string,
-    handler: ExpressWorkerHandler<T>,
-  ) {
-    this.paths.GET.set(path, handler);
+  get(path: string, handler: ExpressWorkerHandler) {
+    this.paths.GET.push([path, handler]);
   }
 
-  post<T extends ExpressWorkerAdditionalParams>(
-    path: string,
-    handler: ExpressWorkerHandler<T>,
-  ) {
-    this.paths.POST.set(path, handler);
+  post(path: string, handler: ExpressWorkerHandler) {
+    this.paths.POST.push([path, handler]);
   }
 
-  use<T extends ExpressWorkerAdditionalParams>(
-    handler: ExpressWorkerHandler<T>,
-  ) {
-    this.get<T>('*', handler);
-    this.post<T>('*', handler);
+  use(handler: ExpressWorkerHandler) {
+    this.paths.USE.push(handler);
   }
 
   private async handleRequest(
-    method: 'GET' | 'POST',
     request: Request,
     res: ExpressWorkerResponse,
   ): Promise<Response> {
-    if (request.method === method) {
-      for (const [path, handler] of this.paths[method].entries()) {
-        const match = pathToRegexp(path).exec(new URL(request.url).pathname);
+    for (const [path, handler] of this.paths[request.method]) {
+      const match = pathToRegexp(path).exec(new URL(request.url).pathname);
 
-        if (match) {
-          const req: ExpressWorkerRequest<ExpressWorkerAdditionalParams> = {
-            ...request,
-            params: match.groups,
-          };
-          await handler(req, res);
-          const { body, ...responseInit } = res;
-          return new Response(body, responseInit);
+      if (match) {
+        const req: ExpressWorkerRequest = {
+          ...request,
+          params: match.groups,
+        };
+
+        for (const middleware of this.paths.USE) {
+          await middleware(req, res);
+
+          if (res._ended) {
+            continue;
+          }
         }
+
+        if (!res._ended) {
+          await handler(req, res);
+        }
+
+        const { body, ...responseInit } = res;
+        return new Response(body, responseInit);
       }
     }
 
@@ -85,6 +91,11 @@ export class ExpressWorker {
     const res: ExpressWorkerResponse = {
       ...new Response(),
       body: '',
+      status: 200,
+      _ended: false,
+      end() {
+        this._ended = true;
+      },
     };
 
     return event.respondWith(
@@ -93,11 +104,7 @@ export class ExpressWorker {
           throw new Error(`Unsupported method: ${event.request.method}`);
         }
 
-        return await this.handleRequest(
-          event.request.method,
-          event.request,
-          res,
-        );
+        return await this.handleRequest(event.request, res);
       })(),
     );
   }
