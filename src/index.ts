@@ -1,18 +1,26 @@
 import { pathToRegexp } from 'path-to-regexp';
 
-export interface ExpressWorkerAdditionalParams {
-  [key: string]: unknown;
+export class ExpressWorkerRequest extends Request {
+  params: Record<string, string> = {};
 }
 
-export type ExpressWorkerRequest = Request & {
-  params?: Record<string, string>;
-};
+class _ExpressWorkerResponse extends Response {
+  _body = '';
+  _headers = new Headers();
+  _ended = false;
+  status = 200;
 
-export type ExpressWorkerResponse = Omit<Omit<Response, 'body'>, 'status'> & {
+  end() {
+    this._ended = true;
+  }
+}
+
+export type ExpressWorkerResponse = Omit<
+  _ExpressWorkerResponse,
+  'body' | 'headers'
+> & {
   body: string;
-  status: number;
-  end: () => void;
-  _ended: boolean;
+  headers: Headers;
 };
 
 export interface ExpressWorkerHandler {
@@ -20,6 +28,39 @@ export interface ExpressWorkerHandler {
 }
 
 type PathArray = [string, ExpressWorkerHandler][];
+
+const proxyConfig: ProxyHandler<_ExpressWorkerResponse> = {
+  get: (target, key) => {
+    if (key === 'body') {
+      return target._body;
+    }
+
+    if (key === 'headers') {
+      return target._headers;
+    }
+
+    return target[key];
+  },
+  set: (target, key, value) => {
+    if (key === 'body') {
+      target._body = value;
+    } else {
+      target[key] = value;
+    }
+
+    return true;
+  },
+};
+
+function isModifiedResponse(
+  response: unknown,
+): response is ExpressWorkerResponse {
+  return (
+    response instanceof _ExpressWorkerResponse &&
+    '_body' in response &&
+    '_headers' in response
+  );
+}
 
 export class ExpressWorker {
   private paths: {
@@ -50,18 +91,25 @@ export class ExpressWorker {
     this.paths.USE.push(handler);
   }
 
-  private async handleRequest(
-    request: Request,
-    res: ExpressWorkerResponse,
-  ): Promise<Response> {
+  private async handleRequest(request: Request): Promise<Response> {
     for (const [path, handler] of this.paths[request.method]) {
       const match = pathToRegexp(path).exec(new URL(request.url).pathname);
 
       if (match) {
-        const req: ExpressWorkerRequest = {
-          ...request,
-          params: match.groups,
-        };
+        const req = new ExpressWorkerRequest(request.url, {
+          method: request.method,
+          headers: request.headers,
+        });
+
+        if (match.groups) {
+          req.params = match.groups;
+        }
+
+        const res = new Proxy(new _ExpressWorkerResponse(), proxyConfig);
+
+        if (!isModifiedResponse(res)) {
+          throw new Error('Response must be a modified response');
+        }
 
         for (const middleware of this.paths.USE) {
           await middleware(req, res);
@@ -75,8 +123,12 @@ export class ExpressWorker {
           await handler(req, res);
         }
 
-        const { body, ...responseInit } = res;
-        return new Response(body, responseInit);
+        const { body, status, headers } = res;
+
+        return new Response(body, {
+          status,
+          headers,
+        });
       }
     }
 
@@ -88,23 +140,13 @@ export class ExpressWorker {
       throw new Error('ExpressWorkerApp must be initialized with a FetchEvent');
     }
 
-    const res: ExpressWorkerResponse = {
-      ...new Response(),
-      body: '',
-      status: 200,
-      _ended: false,
-      end() {
-        this._ended = true;
-      },
-    };
-
     return event.respondWith(
       (async () => {
         if (!this.isMethodEnum(event.request.method)) {
           throw new Error(`Unsupported method: ${event.request.method}`);
         }
 
-        return await this.handleRequest(event.request, res);
+        return await this.handleRequest(event.request);
       })(),
     );
   }
@@ -112,4 +154,15 @@ export class ExpressWorker {
   isMethodEnum(method: string): method is 'GET' | 'POST' {
     return method === 'GET' || method === 'POST';
   }
+}
+
+export function applyAdditionalRequestProperties<T extends Object>(
+  handler: (
+    req: ExpressWorkerRequest & T,
+    res: ExpressWorkerResponse,
+  ) => Promise<void>,
+) {
+  return async (req: ExpressWorkerRequest, res: ExpressWorkerResponse) => {
+    return await handler(req as ExpressWorkerRequest & T, res);
+  };
 }

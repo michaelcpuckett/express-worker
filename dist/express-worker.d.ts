@@ -1,14 +1,16 @@
-export interface ExpressWorkerAdditionalParams {
-    [key: string]: unknown;
+export class ExpressWorkerRequest extends Request {
+    params: Record<string, string>;
 }
-export type ExpressWorkerRequest = Request & {
-    params?: Record<string, string>;
-};
-export type ExpressWorkerResponse = Omit<Omit<Response, 'body'>, 'status'> & {
-    body: string;
-    status: number;
-    end: () => void;
+declare class _ExpressWorkerResponse extends Response {
+    _body: string;
+    _headers: Headers;
     _ended: boolean;
+    status: number;
+    end(): void;
+}
+export type ExpressWorkerResponse = Omit<_ExpressWorkerResponse, 'body' | 'headers'> & {
+    body: string;
+    headers: Headers;
 };
 export interface ExpressWorkerHandler {
     (req: ExpressWorkerRequest, res: ExpressWorkerResponse): void | Promise<void>;
@@ -21,5 +23,6 @@ export class ExpressWorker {
     handleFetch(event: Event): void;
     isMethodEnum(method: string): method is 'GET' | 'POST';
 }
+export function applyAdditionalRequestProperties<T extends Object>(handler: (req: ExpressWorkerRequest & T, res: ExpressWorkerResponse) => Promise<void>): (req: ExpressWorkerRequest, res: ExpressWorkerResponse) => Promise<void>;
 
 //# sourceMappingURL=express-worker.d.ts.map
