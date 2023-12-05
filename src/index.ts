@@ -6,12 +6,17 @@ export class ExpressWorkerRequest extends Request {
 
 class _ExpressWorkerResponse extends Response {
   _body = '';
+  _redirect = '';
   _headers = new Headers();
   _ended = false;
   status = 200;
 
   end() {
     this._ended = true;
+  }
+
+  redirect(url: string) {
+    this._redirect = url;
   }
 }
 
@@ -123,7 +128,11 @@ export class ExpressWorker {
           await handler(req, res);
         }
 
-        const { body, status, headers } = res;
+        const { body, status, headers, _redirect } = res;
+
+        if (_redirect) {
+          return Response.redirect(_redirect, 303);
+        }
 
         return new Response(body, {
           status,

@@ -1,6 +1,6 @@
 {
   "name": "@express-worker/app",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "Express-style routing for Service Workers",
   "main": "dist/express-worker.js",
   "publishConfig": {

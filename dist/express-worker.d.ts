@@ -3,10 +3,12 @@ export class ExpressWorkerRequest extends Request {
 }
 declare class _ExpressWorkerResponse extends Response {
     _body: string;
+    _redirect: string;
     _headers: Headers;
     _ended: boolean;
     status: number;
     end(): void;
+    redirect(url: string): void;
 }
 export type ExpressWorkerResponse = Omit<_ExpressWorkerResponse, 'body' | 'headers'> & {
     body: string;
