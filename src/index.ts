@@ -168,10 +168,16 @@ export class ExpressWorker {
   private paths: {
     GET: PathArray;
     POST: PathArray;
+    PATCH: PathArray;
+    PUT: PathArray;
+    DELETE: PathArray;
     USE: ExpressWorkerHandler[];
   } = {
     GET: [],
     POST: [],
+    PATCH: [],
+    PUT: [],
+    DELETE: [],
     USE: [],
   };
 
@@ -192,6 +198,18 @@ export class ExpressWorker {
 
   post(path: string, handler: ExpressWorkerHandler) {
     this.paths.POST.push([path, handler]);
+  }
+
+  put(path: string, handler: ExpressWorkerHandler) {
+    this.paths.PUT.push([path, handler]);
+  }
+
+  patch(path: string, handler: ExpressWorkerHandler) {
+    this.paths.PATCH.push([path, handler]);
+  }
+
+  delete(path: string, handler: ExpressWorkerHandler) {
+    this.paths.DELETE.push([path, handler]);
   }
 
   use(handler: ExpressWorkerHandler) {
@@ -291,8 +309,16 @@ export class ExpressWorker {
     );
   }
 
-  isMethodEnum(method: string): method is 'GET' | 'POST' {
-    return method === 'GET' || method === 'POST';
+  isMethodEnum(
+    method: string,
+  ): method is 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE' {
+    return (
+      method === 'GET' ||
+      method === 'POST' ||
+      method === 'PATCH' ||
+      method === 'PUT' ||
+      method === 'DELETE'
+    );
   }
 }
 

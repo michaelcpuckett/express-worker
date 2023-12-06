@@ -41,9 +41,12 @@ export class ExpressWorker {
     });
     get(path: string, handler: ExpressWorkerHandler): void;
     post(path: string, handler: ExpressWorkerHandler): void;
+    put(path: string, handler: ExpressWorkerHandler): void;
+    patch(path: string, handler: ExpressWorkerHandler): void;
+    delete(path: string, handler: ExpressWorkerHandler): void;
     use(handler: ExpressWorkerHandler): void;
     handleFetch(event: Event): void;
-    isMethodEnum(method: string): method is 'GET' | 'POST';
+    isMethodEnum(method: string): method is 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 }
 export function applyAdditionalRequestProperties<T extends Object>(handler: (req: ExpressWorkerRequest & T, res: ExpressWorkerResponse) => Promise<void>): (req: ExpressWorkerRequest, res: ExpressWorkerResponse) => Promise<void>;
 
