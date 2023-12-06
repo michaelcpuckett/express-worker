@@ -36,7 +36,11 @@ class _ExpressWorkerResponse extends Response {
 
   __send(data: string | unknown) {
     if (typeof data === 'string') {
-      this.__html(data);
+      if (!this._headers.has('Content-Type')) {
+        this.__html(data);
+      } else {
+        this._body = data;
+      }
     } else {
       this.__json(data);
     }
