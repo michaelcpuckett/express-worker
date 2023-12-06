@@ -7,11 +7,40 @@ export class _ExpressWorkerRequest extends Request {
 
 class _ExpressWorkerResponse extends Response {
   _body = '';
+  _blob: Blob | null = null;
   _redirect = '';
   _ended = false;
   _headers = new Headers();
 
   status = 200;
+
+  __html(data: string) {
+    this._body = data;
+    this._headers.set('Content-Type', 'text/html');
+  }
+
+  __text(data: string) {
+    this._body = data;
+    this._headers.set('Content-Type', 'text/plain');
+  }
+
+  __json(data: unknown) {
+    this._body = JSON.stringify(data);
+    this._headers.set('Content-Type', 'application/json');
+  }
+
+  __blob(blob: Blob) {
+    this._blob = blob;
+    this._headers.set('Content-Type', blob.type);
+  }
+
+  __send(data: string | unknown) {
+    if (typeof data === 'string') {
+      this.__html(data);
+    } else {
+      this.__json(data);
+    }
+  }
 
   end() {
     this._ended = true;
@@ -29,6 +58,11 @@ export type ExpressWorkerResponse = Omit<
   _self: _ExpressWorkerResponse;
   body: string;
   headers: Headers;
+  html: (data: string) => void;
+  text: (data: string) => void;
+  json: (data: unknown) => void;
+  blob: (blob: Blob) => void;
+  send: (data: string | unknown) => void;
 };
 
 export type ExpressWorkerRequest = Omit<
@@ -68,6 +102,26 @@ const responseProxyConfig: ProxyHandler<_ExpressWorkerResponse> = {
 
     if (key === 'headers') {
       return target._headers;
+    }
+
+    if (key === 'blob') {
+      return target.__blob;
+    }
+
+    if (key === 'html') {
+      return target.__html;
+    }
+
+    if (key === 'text') {
+      return target.__text;
+    }
+
+    if (key === 'json') {
+      return target.__json;
+    }
+
+    if (key === 'send') {
+      return target.__send;
     }
 
     if (key === '_self') {
@@ -195,7 +249,7 @@ export class ExpressWorker {
       await handler(req, res);
     }
 
-    const { body, status, headers, _redirect } = res;
+    const { _body, status, _headers, _blob, _redirect } = res;
 
     if (this.debug) {
       console.log(this, req._self, res._self);
@@ -205,13 +259,15 @@ export class ExpressWorker {
       return Response.redirect(_redirect, 303);
     }
 
-    if (!body) {
+    const content = _body || _blob;
+
+    if (!content) {
       return new Response('Not found', { status: 404 });
     }
 
-    return new Response(body, {
+    return new Response(content, {
       status,
-      headers,
+      headers: _headers,
     });
   }
 
