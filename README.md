@@ -1,4 +1,4 @@
-# Run Express inside the Browser
+# Express.js ported to a Service Worker context
 
 ## What is ExpressWorker?
 
