@@ -79,6 +79,8 @@ app.use((req) => {
 });
 ```
 
+If you add additional properties to `req`, then you can wrap request handlers with `applyAdditionalRequestProperties` to make TypeScript aware.
+
 ## Differences from Express
 
 - `req` inherits from `Request` and appends properties:
