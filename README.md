@@ -96,3 +96,7 @@ If you add additional properties to `req`, then you can wrap request handlers wi
 - No support for `next()` function.
 - No need for `listen()` method.
 - No support for rendering engines or other advanced features.
+
+## See Also
+
+- https://github.com/jcubic/wayne/
