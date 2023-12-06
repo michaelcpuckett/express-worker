@@ -1,24 +1,33 @@
-export class ExpressWorkerRequest extends Request {
+export class _ExpressWorkerRequest extends Request {
+    _formData: FormData;
     params: Record<string, string>;
 }
 declare class _ExpressWorkerResponse extends Response {
     _body: string;
     _redirect: string;
-    _headers: Headers;
     _ended: boolean;
+    _headers: Headers;
     status: number;
     end(): void;
     redirect(url: string): void;
 }
 export type ExpressWorkerResponse = Omit<_ExpressWorkerResponse, 'body' | 'headers'> & {
+    _self: _ExpressWorkerResponse;
     body: string;
     headers: Headers;
+};
+export type ExpressWorkerRequest = Omit<_ExpressWorkerRequest, 'body' | 'formData'> & {
+    _self: _ExpressWorkerRequest;
+    body: string;
+    formData: FormData;
 };
 export interface ExpressWorkerHandler {
     (req: ExpressWorkerRequest, res: ExpressWorkerResponse): void | Promise<void>;
 }
 export class ExpressWorker {
-    constructor();
+    constructor(options?: {
+        debug?: boolean;
+    });
     get(path: string, handler: ExpressWorkerHandler): void;
     post(path: string, handler: ExpressWorkerHandler): void;
     use(handler: ExpressWorkerHandler): void;
