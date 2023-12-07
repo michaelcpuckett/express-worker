@@ -4,9 +4,9 @@
 
 ExpressWorker provides an Express-like API for handling requests inside a Service Worker.
 
-ExpressWorker listens for `fetch` events passed to the Service Worker, which occur whenever the browser tries to request a resource. The Service Worker can then respond to the request with a generated response.
-
 ## Installation
+
+Inside a service worker:
 
 ```ts
 import { ExpressWorker } from '@express-worker/app';
