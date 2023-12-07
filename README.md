@@ -2,11 +2,9 @@
 
 ## What is ExpressWorker?
 
-ExpressWorker provides an Express-like API for handling requests inside a Service Worker.
+ExpressWorker provides a simple [Express](https://expressjs.com/)-like API for handling requests inside a Service Worker.
 
 ## Installation
-
-Inside a service worker:
 
 ```ts
 import { ExpressWorker } from '@express-worker/app';
@@ -35,7 +33,7 @@ app.get('/cats/:id', (req, res) => {
 
 ## Serving Static Resources
 
-Create GET handlers to serve static resources from a Cache.
+Create GET handlers to serve static resources from a cache.
 
 ```ts
 const handleStaticFile = (req, res) => {
@@ -69,9 +67,9 @@ for (const url of URLS_TO_CACHE) {
 
 ## Applying Middleware
 
-Middleware is called before other request handlers, and can be used to add properties to `req` so they will be present downstream.
+Middleware handlers are called before other request handlers, so they can be used to add properties to `req` that will be present downstream.
 
-For example, you can use a middleware function to normalize FormData as `req.data`.
+For example, you can use a middleware handler to normalize FormData as `req.data`.
 
 ```ts
 app.use((req) => {
@@ -85,9 +83,9 @@ If you add additional properties to `req`, then you can wrap request handlers wi
 
 ## Differences from Express
 
-- `req` inherits from `Request` and appends properties:
+- `req` inherits from native `Request` and appends properties:
   - `params`
-- `res` inherits from `Response` and appends methods:
+- `res` inherits from native `Response` and appends methods:
   - `blob()`
   - `end()`
   - `html()`

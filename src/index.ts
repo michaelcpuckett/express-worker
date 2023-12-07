@@ -218,7 +218,13 @@ export class ExpressWorker {
     this.paths.USE.push(handler.bind(this));
   }
 
-  private async handleRequest(request: Request): Promise<Response> {
+  private async handleRequest(event: Event): Promise<Response> {
+    if (!(event instanceof FetchEvent)) {
+      throw new Error('Event must be a FetchEvent');
+    }
+
+    const request = event.request;
+
     const req = new Proxy(
       new _ExpressWorkerRequest(request.url, {
         method: request.method,
@@ -300,15 +306,11 @@ export class ExpressWorker {
       throw new Error('ExpressWorkerApp must be initialized with a FetchEvent');
     }
 
-    return event.respondWith(
-      (async () => {
-        if (!this.isMethodEnum(event.request.method)) {
-          throw new Error(`Unsupported method: ${event.request.method}`);
-        }
+    if (!this.isMethodEnum(event.request.method)) {
+      return;
+    }
 
-        return await this.handleRequest(event.request);
-      })(),
-    );
+    return event.respondWith(this.handleRequest(event));
   }
 
   isMethodEnum(
