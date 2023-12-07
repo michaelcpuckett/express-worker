@@ -69,13 +69,22 @@ for (const url of URLS_TO_CACHE) {
 
 Middleware handlers are called before other request handlers, so they can be used to add properties to `req` that will be present downstream.
 
-For example, you can use a middleware handler to normalize FormData as `req.data`.
+Here's a middleware handler to normalize FormData as `req.data`:
 
 ```ts
-app.use((req) => {
+app.use(function FormDataMiddleware(req) {
   if (req.headers.get('Content-Type') === 'multipart/form-data') {
     req.data = Object.fromEntries(Array.from(req.formData.entries()));
   }
+});
+```
+
+Here's a middleware handler to normalize a query string as `req.query`:
+
+```ts
+app.use(function QueryStringMiddleware(req) {
+  const url = new URL(req.url);
+  req.query = Object.fromEntries(Array.from(url.searchParams.entries()));
 });
 ```
 
