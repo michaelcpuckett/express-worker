@@ -4,6 +4,8 @@
 
 ExpressWorker provides an Express-like API for handling requests inside a Service Worker.
 
+ExpressWorker listens for `fetch` events passed to the Service Worker, which occur whenever the browser tries to request a resource. The Service Worker can then respond to the request with a generated response.
+
 ## Installation
 
 ```ts
@@ -16,9 +18,7 @@ app.get('/', (req, res) => {
 });
 ```
 
-Under the hood, the ExpressWorker instance listens for `fetch` events passed to the Service Worker, which occur whenever the browser tries to request a resource.
-
-## Handling Dynamic Pages
+## Serving Dynamic Pages
 
 You can use Express-style path params and a server-side templating engine such as `react-dom/server` or `@lit-labs/ssr` to produce dynamic HTML output.
 
@@ -33,7 +33,9 @@ app.get('/cats/:id', (req, res) => {
 });
 ```
 
-## Handling Static Resources
+## Serving Static Resources
+
+Create GET handlers to serve static resources from a Cache.
 
 ```ts
 const handleStaticFile = (req, res) => {
@@ -67,7 +69,7 @@ for (const url of URLS_TO_CACHE) {
 
 ## Applying Middleware
 
-Middleware is called on every request, and can be used to add properties to `req` so they will be present downstream.
+Middleware is called before other request handlers, and can be used to add properties to `req` so they will be present downstream.
 
 For example, you can use a middleware function to normalize FormData as `req.data`.
 
@@ -79,20 +81,20 @@ app.use((req) => {
 });
 ```
 
-If you add additional properties to `req`, then you can wrap request handlers with `applyAdditionalRequestProperties` to make TypeScript aware.
+If you add additional properties to `req`, then you can wrap request handlers with `applyAdditionalRequestProperties` to make TypeScript aware of them.
 
 ## Differences from Express
 
 - `req` inherits from `Request` and appends properties:
   - `params`
 - `res` inherits from `Response` and appends methods:
-  - `html()`
-  - `text()`
-  - `json()`
   - `blob()`
-  - `send()`
   - `end()`
+  - `html()`
+  - `json()`
   - `redirect()`
+  - `send()`
+  - `text()`
 - No support for `next()` function.
 - No need for `listen()` method.
 - No support for rendering engines or other advanced features.

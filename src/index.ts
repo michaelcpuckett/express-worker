@@ -44,6 +44,8 @@ class _ExpressWorkerResponse extends Response {
     } else {
       this.__json(data);
     }
+
+    this.end();
   }
 
   end() {
