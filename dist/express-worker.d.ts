@@ -22,6 +22,10 @@ export type ExpressWorkerResponse = Omit<_ExpressWorkerResponse, 'body' | 'heade
     _self: _ExpressWorkerResponse;
     body: string;
     headers: Headers;
+    url: string;
+    method: string;
+    formData: () => Promise<FormData>;
+    arrayBuffer: () => Promise<ArrayBuffer>;
     html: (data: string) => void;
     text: (data: string) => void;
     json: (data: unknown) => void;
