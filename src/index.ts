@@ -136,6 +136,18 @@ const requestProxyConfig: ProxyHandler<_ExpressWorkerRequest> = {
       return target._self.body;
     }
 
+    if (key === 'headers') {
+      return target._self.headers;
+    }
+
+    if (key === 'url') {
+      return target._self.url;
+    }
+
+    if (key === 'method') {
+      return target._self.method;
+    }
+
     return target[key];
   },
 };
