@@ -1,10 +1,21 @@
-import { pathToRegexp, Key } from 'path-to-regexp';
+import { Key, pathToRegexp } from 'path-to-regexp';
 
-export class _ExpressWorkerRequest extends Request {
-  _formData = new FormData();
+/**
+ * Wraps the native Request object and adds the `params` object.
+ * This will be wrapped in a Proxy to provide the default API.
+ **/
+export class _ExpressWorkerRequest {
+  _self: Request;
   params: Record<string, string> = {};
+
+  constructor(_self: Request) {
+    this._self = _self;
+  }
 }
 
+/**
+ * Extends the native Response object and adds familiar Express-style methods.
+ */
 class _ExpressWorkerResponse extends Response {
   _body = '';
   _blob: Blob | null = null;
@@ -57,6 +68,9 @@ class _ExpressWorkerResponse extends Response {
   }
 }
 
+/**
+ * The type of the ExpressWorkerResponse object when wrapped in a Proxy.
+ */
 export type ExpressWorkerResponse = Omit<
   _ExpressWorkerResponse,
   'body' | 'headers'
@@ -71,35 +85,64 @@ export type ExpressWorkerResponse = Omit<
   send: (data: string | unknown) => void;
 };
 
-export type ExpressWorkerRequest = Omit<
-  _ExpressWorkerRequest,
-  'body' | 'formData'
-> & {
+/**
+ * The type of the ExpressWorkerRequest object when wrapped in a Proxy.
+ */
+export type ExpressWorkerRequest = Omit<_ExpressWorkerRequest, 'body'> & {
   _self: _ExpressWorkerRequest;
   body: string;
-  formData: FormData;
 };
 
+/**
+ * The handler function for `get`, `post`, `put`, `patch`, and `delete` methods.
+ */
 export interface ExpressWorkerHandler {
   (req: ExpressWorkerRequest, res: ExpressWorkerResponse): void | Promise<void>;
 }
 
+/**
+ * The way the requests are stored.
+ *
+ * The first element is the path, the second is the handler.
+ */
 type PathArray = [string, ExpressWorkerHandler][];
 
+/**
+ * The options for the ExpressWorkerRequest Proxy.
+ */
 const requestProxyConfig: ProxyHandler<_ExpressWorkerRequest> = {
   get: (target, key) => {
     if (key === 'formData') {
-      return target._formData;
+      return target._self.formData.bind(target._self);
     }
 
-    if (key === '_self') {
-      return target;
+    if (key === 'blob') {
+      return target._self.blob.bind(target._self);
+    }
+
+    if (key === 'json') {
+      return target._self.json.bind(target._self);
+    }
+
+    if (key === 'text') {
+      return target._self.text.bind(target._self);
+    }
+
+    if (key === 'arrayBuffer') {
+      return target._self.arrayBuffer.bind(target._self);
+    }
+
+    if (key === 'body') {
+      return target._self.body;
     }
 
     return target[key];
   },
 };
 
+/**
+ * The options for the ExpressWorkerResponse Proxy.
+ */
 const responseProxyConfig: ProxyHandler<_ExpressWorkerResponse> = {
   get: (target, key) => {
     if (key === 'body') {
@@ -147,14 +190,16 @@ const responseProxyConfig: ProxyHandler<_ExpressWorkerResponse> = {
   },
 };
 
+/**
+ * Guards for whether a request is an ExpressWorkerRequest.
+ */
 function isModifiedRequest(request: unknown): request is ExpressWorkerRequest {
-  return (
-    request instanceof _ExpressWorkerRequest &&
-    '_formData' in request &&
-    'params' in request
-  );
+  return request instanceof _ExpressWorkerRequest && 'params' in request;
 }
 
+/**
+ * Guards for whether a response is an ExpressWorkerResponse.
+ */
 function isModifiedResponse(
   response: unknown,
 ): response is ExpressWorkerResponse {
@@ -165,8 +210,14 @@ function isModifiedResponse(
   );
 }
 
+/**
+ * The main class for ExpressWorker.
+ */
 export class ExpressWorker {
+  /** Whether to display logs in the console. */
   private debug = false;
+
+  /** The paths and handlers for each method. */
   private paths: {
     GET: PathArray;
     POST: PathArray;
@@ -194,31 +245,38 @@ export class ExpressWorker {
     }
   }
 
+  /** Registers a GET event handler. */
   get(path: string, handler: ExpressWorkerHandler) {
     this.paths.GET.push([path, handler]);
   }
 
+  /** Registers a POST event handler. */
   post(path: string, handler: ExpressWorkerHandler) {
     this.paths.POST.push([path, handler]);
   }
 
+  /** Registers a PUT event handler. */
   put(path: string, handler: ExpressWorkerHandler) {
     this.paths.PUT.push([path, handler]);
   }
 
+  /** Registers a PATCH event handler. */
   patch(path: string, handler: ExpressWorkerHandler) {
     this.paths.PATCH.push([path, handler]);
   }
 
+  /** Registers a DELETE event handler. */
   delete(path: string, handler: ExpressWorkerHandler) {
     this.paths.DELETE.push([path, handler]);
   }
 
+  /** Registers a middleware handler. */
   use(handler: ExpressWorkerHandler) {
     this.paths.USE.push(handler.bind(this));
   }
 
-  private async handleRequest(event: Event): Promise<Response> {
+  /** Processes a request and returns a response. */
+  async handleRequest(event: Event): Promise<Response> {
     if (!(event instanceof FetchEvent)) {
       throw new Error('Event must be a FetchEvent');
     }
@@ -226,15 +284,9 @@ export class ExpressWorker {
     const request = event.request;
 
     const req = new Proxy(
-      new _ExpressWorkerRequest(request.url, {
-        method: request.method,
-        headers: request.headers,
-      }),
+      new _ExpressWorkerRequest(request),
       requestProxyConfig,
     );
-
-    req._formData =
-      req.method === 'POST' ? await request.formData() : new FormData();
 
     const res = new Proxy(new _ExpressWorkerResponse(), responseProxyConfig);
 
@@ -301,6 +353,7 @@ export class ExpressWorker {
     });
   }
 
+  /** Handles the fetch event. */
   handleFetch(event: Event) {
     if (!(event instanceof FetchEvent)) {
       throw new Error('ExpressWorkerApp must be initialized with a FetchEvent');
@@ -313,6 +366,7 @@ export class ExpressWorker {
     return event.respondWith(this.handleRequest(event));
   }
 
+  /** Checks whether a method is a valid HTTP method. */
   isMethodEnum(
     method: string,
   ): method is 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE' {
@@ -324,8 +378,23 @@ export class ExpressWorker {
       method === 'DELETE'
     );
   }
+
+  /** Resets the paths. For use in tests only. */
+  __reset() {
+    this.paths = {
+      GET: [],
+      POST: [],
+      PATCH: [],
+      PUT: [],
+      DELETE: [],
+      USE: [],
+    };
+  }
 }
 
+/**
+ * Generate a modified handler that includes any middleware properties.
+ */
 export function applyAdditionalRequestProperties<T extends Object>(
   handler: (
     req: ExpressWorkerRequest & T,

@@ -6,6 +6,8 @@ ExpressWorker provides a simple [Express](https://expressjs.com/)-like API for h
 
 ## Installation
 
+After calling `navigator.serviceWorker.register` in a client script, you can create an ExpressWorker app in the service worker file like this:
+
 ```ts
 import { ExpressWorker } from '@express-worker/app';
 

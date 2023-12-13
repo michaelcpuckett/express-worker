@@ -9,13 +9,12 @@
     "declaration": true,
     "noImplicitAny": false,
     "removeComments": true,
-    "jsx": "react-jsx",
     "noLib": false,
     "isolatedModules": true,
     "lib": ["ESNext", "webworker", "DOM.Iterable"],
     "target": "ESNext",
-    "outDir": "./"
+    "outDir": "../dist"
   },
-  "exclude": ["./node_modules"],
-  "include": ["src/**/*"]
+  "exclude": ["../node_modules"],
+  "include": ["./src/index.ts"]
 }

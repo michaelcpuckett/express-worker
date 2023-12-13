@@ -1,6 +1,7 @@
-export class _ExpressWorkerRequest extends Request {
-    _formData: FormData;
+export class _ExpressWorkerRequest {
+    _self: Request;
     params: Record<string, string>;
+    constructor(_self: Request);
 }
 declare class _ExpressWorkerResponse extends Response {
     _body: string;
@@ -27,10 +28,9 @@ export type ExpressWorkerResponse = Omit<_ExpressWorkerResponse, 'body' | 'heade
     blob: (blob: Blob) => void;
     send: (data: string | unknown) => void;
 };
-export type ExpressWorkerRequest = Omit<_ExpressWorkerRequest, 'body' | 'formData'> & {
+export type ExpressWorkerRequest = Omit<_ExpressWorkerRequest, 'body'> & {
     _self: _ExpressWorkerRequest;
     body: string;
-    formData: FormData;
 };
 export interface ExpressWorkerHandler {
     (req: ExpressWorkerRequest, res: ExpressWorkerResponse): void | Promise<void>;
@@ -45,8 +45,10 @@ export class ExpressWorker {
     patch(path: string, handler: ExpressWorkerHandler): void;
     delete(path: string, handler: ExpressWorkerHandler): void;
     use(handler: ExpressWorkerHandler): void;
+    handleRequest(event: Event): Promise<Response>;
     handleFetch(event: Event): void;
     isMethodEnum(method: string): method is 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+    __reset(): void;
 }
 export function applyAdditionalRequestProperties<T extends Object>(handler: (req: ExpressWorkerRequest & T, res: ExpressWorkerResponse) => Promise<void>): (req: ExpressWorkerRequest, res: ExpressWorkerResponse) => Promise<void>;
 

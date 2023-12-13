@@ -1,0 +1,38 @@
+<script>
+  window.navigator.serviceWorker
+    .register('/base/tests/sw.js', {
+      scope: '/',
+      updateViaCache: 'none',
+    })
+    .then(async (registration) => {
+      await new Promise((resolve, reject) => {
+        if (!registration) {
+          console.log('Test service worker failed to install');
+          reject('No service worker registration found!');
+          return;
+        }
+
+        const sw =
+          registration.waiting ||
+          registration.active ||
+          registration.installing;
+
+        if (sw.state === 'activated') {
+          resolve();
+        }
+
+        sw.addEventListener('statechange', (event) => {
+          if (event.target.state === 'activated') {
+            resolve();
+          }
+        });
+      });
+    })
+    .then(() => {
+      console.log('Test service worker registered, installed, and activated!');
+      const broadcastChannel = new BroadcastChannel('sw-messages');
+      broadcastChannel.postMessage({
+        type: 'sw-registered',
+      });
+    });
+</script>
