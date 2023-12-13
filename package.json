@@ -1,18 +1,17 @@
 {
   "name": "@express-worker/app",
-  "version": "1.0.6",
+  "version": "1.0.8",
   "description": "Express-style routing for Service Workers",
   "main": "dist/express-worker.js",
   "publishConfig": {
     "access": "public"
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "scripts": {
     "format": "prettier --config .prettierrc \"**/*.{ts,tsx}\" --write",
-    "build": "parcel build --no-scope-hoist",
+    "build": "parcel build --no-scope-hoist & npm run browserify",
     "test": "karma start --single-run",
     "start": "karma start",
     "browserify": "browserify ./dist/express-worker.js --standalone ExpressWorker -o ./dist/express-worker.umd.js"
