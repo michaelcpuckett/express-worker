@@ -18,23 +18,31 @@ declare class _ExpressWorkerResponse extends Response {
     end(): void;
     redirect(url: string): void;
 }
+export type ExpressWorkerRequest = Omit<Request, 'body'> & {
+    _self: _ExpressWorkerRequest;
+    body: string;
+    params: Record<string, string>;
+    headers: Headers;
+    url: string;
+    method: string;
+    formData: () => Promise<FormData>;
+    arrayBuffer: () => Promise<ArrayBuffer>;
+    html: () => Promise<string>;
+    text: () => Promise<string>;
+    json: () => Promise<unknown>;
+    blob: () => Promise<Blob>;
+};
 export type ExpressWorkerResponse = Omit<_ExpressWorkerResponse, 'body' | 'headers'> & {
     _self: _ExpressWorkerResponse;
     body: string;
     headers: Headers;
     url: string;
     method: string;
-    formData: () => Promise<FormData>;
-    arrayBuffer: () => Promise<ArrayBuffer>;
     html: (data: string) => void;
     text: (data: string) => void;
     json: (data: unknown) => void;
     blob: (blob: Blob) => void;
     send: (data: string | unknown) => void;
-};
-export type ExpressWorkerRequest = Omit<_ExpressWorkerRequest, 'body'> & {
-    _self: _ExpressWorkerRequest;
-    body: string;
 };
 export interface ExpressWorkerHandler {
     (req: ExpressWorkerRequest, res: ExpressWorkerResponse): void | Promise<void>;

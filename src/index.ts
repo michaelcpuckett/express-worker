@@ -69,6 +69,24 @@ class _ExpressWorkerResponse extends Response {
 }
 
 /**
+ * The type of the ExpressWorkerRequest object when wrapped in a Proxy.
+ */
+export type ExpressWorkerRequest = Omit<Request, 'body'> & {
+  _self: _ExpressWorkerRequest;
+  body: string;
+  params: Record<string, string>;
+  headers: Headers;
+  url: string;
+  method: string;
+  formData: () => Promise<FormData>;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+  html: () => Promise<string>;
+  text: () => Promise<string>;
+  json: () => Promise<unknown>;
+  blob: () => Promise<Blob>;
+};
+
+/**
  * The type of the ExpressWorkerResponse object when wrapped in a Proxy.
  */
 export type ExpressWorkerResponse = Omit<
@@ -80,21 +98,11 @@ export type ExpressWorkerResponse = Omit<
   headers: Headers;
   url: string;
   method: string;
-  formData: () => Promise<FormData>;
-  arrayBuffer: () => Promise<ArrayBuffer>;
   html: (data: string) => void;
   text: (data: string) => void;
   json: (data: unknown) => void;
   blob: (blob: Blob) => void;
   send: (data: string | unknown) => void;
-};
-
-/**
- * The type of the ExpressWorkerRequest object when wrapped in a Proxy.
- */
-export type ExpressWorkerRequest = Omit<_ExpressWorkerRequest, 'body'> & {
-  _self: _ExpressWorkerRequest;
-  body: string;
 };
 
 /**
