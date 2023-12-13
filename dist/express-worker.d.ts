@@ -9,14 +9,16 @@ declare class _ExpressWorkerResponse extends Response {
     _redirect: string;
     _ended: boolean;
     _headers: Headers;
-    status: number;
-    __html(data: string): void;
-    __text(data: string): void;
-    __json(data: unknown): void;
-    __blob(blob: Blob): void;
-    __send(data: string | unknown): void;
-    end(): void;
-    redirect(url: string): void;
+    _status: number;
+    __html(data: string): this;
+    __text(data: string): this;
+    __json(data: unknown): this;
+    __blob(blob: Blob): this;
+    __send(data: string | unknown): this;
+    __status(code: number): this;
+    set(key: string, value: string): this;
+    end(): this;
+    redirect(url: string): this;
 }
 export type ExpressWorkerRequest = Omit<Request, 'body'> & {
     _self: _ExpressWorkerRequest;
@@ -38,11 +40,13 @@ export type ExpressWorkerResponse = Omit<_ExpressWorkerResponse, 'body' | 'heade
     headers: Headers;
     url: string;
     method: string;
-    html: (data: string) => void;
-    text: (data: string) => void;
-    json: (data: unknown) => void;
-    blob: (blob: Blob) => void;
-    send: (data: string | unknown) => void;
+    status: (code: number) => ExpressWorkerResponse;
+    set: (key: string, value: string) => ExpressWorkerResponse;
+    html: (data: string) => ExpressWorkerResponse;
+    text: (data: string) => ExpressWorkerResponse;
+    json: (data: unknown) => ExpressWorkerResponse;
+    blob: (blob: Blob) => _ExpressWorkerResponse;
+    send: (data: string | unknown) => ExpressWorkerResponse;
 };
 export interface ExpressWorkerHandler {
     (req: ExpressWorkerRequest, res: ExpressWorkerResponse): void | Promise<void>;

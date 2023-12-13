@@ -22,27 +22,30 @@ class _ExpressWorkerResponse extends Response {
   _redirect = '';
   _ended = false;
   _headers = new Headers();
-
-  status = 200;
+  _status = 200;
 
   __html(data: string) {
     this._body = data;
     this._headers.set('Content-Type', 'text/html');
+    return this;
   }
 
   __text(data: string) {
     this._body = data;
     this._headers.set('Content-Type', 'text/plain');
+    return this;
   }
 
   __json(data: unknown) {
     this._body = JSON.stringify(data);
     this._headers.set('Content-Type', 'application/json');
+    return this;
   }
 
   __blob(blob: Blob) {
     this._blob = blob;
     this._headers.set('Content-Type', blob.type);
+    return this;
   }
 
   __send(data: string | unknown) {
@@ -57,14 +60,27 @@ class _ExpressWorkerResponse extends Response {
     }
 
     this.end();
+    return this;
+  }
+
+  __status(code: number) {
+    this._status = code;
+    return this;
+  }
+
+  set(key: string, value: string) {
+    this._headers.set(key, value);
+    return this;
   }
 
   end() {
     this._ended = true;
+    return this;
   }
 
   redirect(url: string) {
     this._redirect = url;
+    return this;
   }
 }
 
@@ -98,11 +114,13 @@ export type ExpressWorkerResponse = Omit<
   headers: Headers;
   url: string;
   method: string;
-  html: (data: string) => void;
-  text: (data: string) => void;
-  json: (data: unknown) => void;
-  blob: (blob: Blob) => void;
-  send: (data: string | unknown) => void;
+  status: (code: number) => ExpressWorkerResponse;
+  set: (key: string, value: string) => ExpressWorkerResponse;
+  html: (data: string) => ExpressWorkerResponse;
+  text: (data: string) => ExpressWorkerResponse;
+  json: (data: unknown) => ExpressWorkerResponse;
+  blob: (blob: Blob) => _ExpressWorkerResponse;
+  send: (data: string | unknown) => ExpressWorkerResponse;
 };
 
 /**
@@ -195,6 +213,10 @@ const responseProxyConfig: ProxyHandler<_ExpressWorkerResponse> = {
 
     if (key === 'send') {
       return target.__send;
+    }
+
+    if (key === 'status') {
+      return target.__status;
     }
 
     if (key === '_self') {
@@ -355,7 +377,7 @@ export class ExpressWorker {
       await handler(req, res);
     }
 
-    const { _body, status, _headers, _blob, _redirect } = res;
+    const { _body, _status, _headers, _blob, _redirect } = res;
 
     if (this.debug) {
       console.log(this, req._self, res._self);
@@ -372,7 +394,7 @@ export class ExpressWorker {
     }
 
     return new Response(content, {
-      status,
+      status: _status,
       headers: _headers,
     });
   }

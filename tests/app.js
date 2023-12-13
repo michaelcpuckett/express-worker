@@ -40,14 +40,16 @@ broadcastChannel.addEventListener('message', (event) => {
   if (event.data.type === 'fetch-without-body') {
     fetch(event.data.data.url, {
       method: event.data.data.method,
-    })
-      .then((res) => res.text())
-      .then((data) => {
-        broadcastChannel.postMessage({
-          type: 'fetch-result',
-          data,
-        });
+    }).then(async (res) => {
+      broadcastChannel.postMessage({
+        type: 'fetch-result',
+        data: {
+          body: await res.text(),
+          status: res.status,
+          headers: Object.fromEntries(Array.from(res.headers.entries())),
+        },
       });
+    });
   }
 
   if (event.data.type === 'fetch-with-formdata') {
@@ -60,14 +62,16 @@ broadcastChannel.addEventListener('message', (event) => {
     fetch(event.data.data.url, {
       method: event.data.data.method,
       body: formData,
-    })
-      .then((res) => res.text())
-      .then((data) => {
-        broadcastChannel.postMessage({
-          type: 'fetch-result',
-          data,
-        });
+    }).then(async (res) => {
+      broadcastChannel.postMessage({
+        type: 'fetch-result',
+        data: {
+          body: await res.text(),
+          status: res.status,
+          headers: Object.fromEntries(Array.from(res.headers.entries())),
+        },
       });
+    });
   }
 
   if (event.data.type === 'test-results') {
@@ -75,6 +79,7 @@ broadcastChannel.addEventListener('message', (event) => {
     window.__karma__.result(event.data.data);
 
     unregisterServiceWorkers().then(() => {
+      iframeElement.remove();
       window.__karma__.complete();
     });
   }

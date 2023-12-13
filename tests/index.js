@@ -13,7 +13,7 @@ describe('Service Worker', function () {
         res.send('Hello World!');
       });
 
-      const text = await new Promise((resolve) => {
+      const response = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -33,7 +33,7 @@ describe('Service Worker', function () {
         });
       });
 
-      expect(text).toBe('Hello World!');
+      expect(response.body).toBe('Hello World!');
     });
 
     it('Should POST an endpoint without FormData', async () => {
@@ -41,7 +41,7 @@ describe('Service Worker', function () {
         res.send('Hello World!');
       });
 
-      const text = await new Promise((resolve) => {
+      const response = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -61,7 +61,8 @@ describe('Service Worker', function () {
         });
       });
 
-      expect(text).toBe('Hello World!');
+      expect(response.status).toBe(200);
+      expect(response.body).toBe('Hello World!');
     });
 
     it('Should POST an endpoint with FormData', async () => {
@@ -73,7 +74,7 @@ describe('Service Worker', function () {
       const formData = new FormData();
       formData.append('foo', 'bar');
 
-      const text = await new Promise((resolve) => {
+      const response = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -94,7 +95,8 @@ describe('Service Worker', function () {
         });
       });
 
-      expect(text).toBe('bar');
+      expect(response.status).toBe(200);
+      expect(response.body).toBe('bar');
     });
 
     it('Should PUT an endpoint without FormData', async () => {
@@ -102,7 +104,7 @@ describe('Service Worker', function () {
         res.send('Hello World [PUT]!');
       });
 
-      const text = await new Promise((resolve) => {
+      const response = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -122,7 +124,8 @@ describe('Service Worker', function () {
         });
       });
 
-      expect(text).toBe('Hello World [PUT]!');
+      expect(response.status).toBe(200);
+      expect(response.body).toBe('Hello World [PUT]!');
     });
 
     it('Should PATCH an endpoint without FormData', async () => {
@@ -130,7 +133,7 @@ describe('Service Worker', function () {
         res.send('Hello World [PATCH]!');
       });
 
-      const text = await new Promise((resolve) => {
+      const response = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -150,7 +153,8 @@ describe('Service Worker', function () {
         });
       });
 
-      expect(text).toBe('Hello World [PATCH]!');
+      expect(response.status).toBe(200);
+      expect(response.body).toBe('Hello World [PATCH]!');
     });
 
     it('Should DELETE an endpoint without FormData', async () => {
@@ -158,7 +162,7 @@ describe('Service Worker', function () {
         res.send('Hello World [DELETE]!');
       });
 
-      const text = await new Promise((resolve) => {
+      const response = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -178,7 +182,38 @@ describe('Service Worker', function () {
         });
       });
 
-      expect(text).toBe('Hello World [DELETE]!');
+      expect(response.status).toBe(200);
+      expect(response.body).toBe('Hello World [DELETE]!');
+    });
+
+    it('supports sending a response with a status code and headers', async () => {
+      expressWorker.get('/test', (req, res) => {
+        res.status(201).set('foo', 'bar').send('Hello World!');
+      });
+
+      const response = await new Promise((resolve) => {
+        broadcastChannel.addEventListener(
+          'message',
+          (event) => {
+            if (event.data.type === 'fetch-result') {
+              resolve(event.data.data);
+            }
+          },
+          { once: true },
+        );
+
+        broadcastChannel.postMessage({
+          type: 'fetch-without-body',
+          data: {
+            url: '/test',
+            method: 'GET',
+          },
+        });
+      });
+
+      expect(response.status).toBe(201);
+      expect(response.headers.foo).toBe('bar');
+      expect(response.body).toBe('Hello World!');
     });
   });
 });
