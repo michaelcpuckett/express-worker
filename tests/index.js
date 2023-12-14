@@ -405,5 +405,66 @@ describe('Service Worker', function () {
       expect(response.status).toBe(200);
       expect(response.body).toBe(expectedRedirectBody);
     });
+
+    it('Handles 404s with a catch-all handler', async () => {
+      const expected404Status = 404;
+      const expected404Body = 'Not found!!!';
+      const expectedStatus = 200;
+      const expectedBody = 'Hello World!';
+
+      expressWorker.get('/test', (req, res) => {
+        res.body = expectedBody;
+      });
+
+      expressWorker.get('*', (req, res) => {
+        res.status = expected404Status;
+        res.body = expected404Body;
+      });
+
+      const response404 = await new Promise((resolve) => {
+        broadcastChannel.addEventListener(
+          'message',
+          (event) => {
+            if (event.data.type === 'fetch-result') {
+              return resolve(event.data.data);
+            }
+          },
+          { once: true },
+        );
+
+        broadcastChannel.postMessage({
+          type: 'fetch-without-body',
+          data: {
+            url: `/not-found`,
+            method: 'GET',
+          },
+        });
+      });
+
+      const response = await new Promise((resolve) => {
+        broadcastChannel.addEventListener(
+          'message',
+          (event) => {
+            if (event.data.type === 'fetch-result') {
+              return resolve(event.data.data);
+            }
+          },
+          { once: true },
+        );
+
+        broadcastChannel.postMessage({
+          type: 'fetch-without-body',
+          data: {
+            url: `/test`,
+            method: 'GET',
+          },
+        });
+      });
+
+      expect(response404.status).toBe(expected404Status);
+      expect(response404.body).toBe(expected404Body);
+      expect(response.status).toBe(expectedStatus);
+      expect(response.body).toBe(expectedBody);
+    });
   });
 });

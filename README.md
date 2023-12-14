@@ -71,7 +71,7 @@ for (const url of URLS_TO_CACHE) {
 
 ## Serving 404 Page
 
-Register a catch-all handler to serve a 404 page for all unhandled requests, after all other handlers have been registered.
+Register a catch-all handler to serve a 404 page for all unhandled requests.
 
 ```ts
 app.get('*', (req, res) => {

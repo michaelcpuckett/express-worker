@@ -226,9 +226,7 @@ const responseProxyConfig: ProxyHandler<_ExpressWorkerResponse> = {
   set: (target, key, value) => {
     if (key === 'status') {
       target.__status(value);
-    }
-
-    if (key === 'body') {
+    } else if (key === 'body') {
       target._body = value;
     } else {
       target[key] = value;
@@ -354,8 +352,14 @@ export class ExpressWorker {
       }
     }
 
+    let hasBeenHandled = false;
+
     for (const [path, handler] of this.paths[request.method]) {
       if (res._ended) {
+        continue;
+      }
+
+      if (path === '*') {
         continue;
       }
 
@@ -377,6 +381,22 @@ export class ExpressWorker {
       req.params = params;
 
       await handler(req, res);
+
+      hasBeenHandled = true;
+    }
+
+    if (!hasBeenHandled) {
+      for (const [path, handler] of this.paths[request.method]) {
+        if (res._ended) {
+          continue;
+        }
+
+        if (path !== '*') {
+          continue;
+        }
+
+        await handler(req, res);
+      }
     }
 
     const { _body, _status, _headers, _blob, _redirect } = res;
