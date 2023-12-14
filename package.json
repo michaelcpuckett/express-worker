@@ -1,6 +1,6 @@
 {
   "name": "@express-worker/app",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Express-style routing for Service Workers",
   "main": "dist/express-worker.js",
   "publishConfig": {
@@ -30,6 +30,10 @@
   },
   "author": "Michael Puckett <michael@puckett.contact>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/michaelcpuckett/express-worker.git"
+  },
   "dependencies": {
     "path-to-regexp": "^6.2.1"
   },
