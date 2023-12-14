@@ -6,7 +6,7 @@ ExpressWorker provides a simple [Express](https://expressjs.com/)-like API for h
 
 ## Installation
 
-After calling `navigator.serviceWorker.register` in a client script, you can create an ExpressWorker app in the service worker file like this:
+Create an ExpressWorker app instance at the top level of a service worker file:
 
 ```ts
 import { ExpressWorker } from '@express-worker/app';
@@ -17,6 +17,8 @@ app.get('/', (req, res) => {
   res.send('Hello world!');
 });
 ```
+
+After registering the service worker, ExpressWorker will handle all requests.
 
 ## Serving Dynamic Pages
 
@@ -67,6 +69,17 @@ for (const url of URLS_TO_CACHE) {
 }
 ```
 
+## Serving 404 Page
+
+Register a catch-all handler to serve a 404 page for all unhandled requests, after all other handlers have been registered.
+
+```ts
+app.get('*', (req, res) => {
+  res.status = 404;
+  res.send('Not found!');
+});
+```
+
 ## Applying Middleware
 
 Middleware handlers are called before other request handlers, so they can be used to add properties to `req` that will be present downstream.
@@ -97,13 +110,14 @@ If you add additional properties to `req`, then you can wrap request handlers wi
 - `req` inherits from native `Request` and appends properties:
   - `params`
 - `res` inherits from native `Response` and appends methods:
-  - `blob()`
-  - `end()`
-  - `html()`
-  - `json()`
-  - `redirect()`
   - `send()`
   - `text()`
+  - `html()`
+  - `json()`
+  - `blob()`
+  - `redirect()`
+  - `status()`
+  - `end()`
 - No support for `next()` function.
 - No need for `listen()` method.
 - No support for rendering engines or other advanced features.
