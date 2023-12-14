@@ -369,5 +369,41 @@ describe('Service Worker', function () {
       expect(response.headers[expectedHeader]).toBe(expectedHeaderValue);
       expect(response.body).toBe(expectedBody);
     });
+
+    it('Supports `redirect` method', async () => {
+      const expectedRedirectUrl = '/redirect';
+      const expectedRedirectBody = 'redirected';
+
+      expressWorker.get('/test', (req, res) => {
+        res.redirect(expectedRedirectUrl);
+      });
+
+      expressWorker.get(expectedRedirectUrl, (req, res) => {
+        res.send(expectedRedirectBody);
+      });
+
+      const response = await new Promise((resolve) => {
+        broadcastChannel.addEventListener(
+          'message',
+          (event) => {
+            if (event.data.type === 'fetch-result') {
+              return resolve(event.data.data);
+            }
+          },
+          { once: true },
+        );
+
+        broadcastChannel.postMessage({
+          type: 'fetch-without-body',
+          data: {
+            url: `/test`,
+            method: 'GET',
+          },
+        });
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toBe(expectedRedirectBody);
+    });
   });
 });
