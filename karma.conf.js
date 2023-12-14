@@ -2,8 +2,6 @@ const fs = require('fs');
 
 module.exports = function (config) {
   config.set({
-    port: 10053,
-    basePath: process.cwd(),
     customHeaders: [
       {
         match: 'sw',
@@ -16,7 +14,7 @@ module.exports = function (config) {
       'tests/context.html',
       {
         pattern: 'dist/express-worker.umd.js',
-        watched: false,
+        watched: true,
         included: false,
         served: true,
       },

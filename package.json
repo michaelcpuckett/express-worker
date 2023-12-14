@@ -10,7 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "format": "prettier --config .prettierrc \"**/*.{ts,tsx}\" --write",
+    "format": "prettier --config .prettierrc \"{src,tests}/*.{ts,js}\" --write",
     "build": "parcel build --no-scope-hoist & npm run browserify",
     "test": "karma start --single-run",
     "start": "karma start",
@@ -38,17 +38,12 @@
     "@parcel/transformer-typescript-tsc": "^2.10.3",
     "@parcel/transformer-typescript-types": "^2.10.3",
     "@types/jasmine": "^5.1.4",
-    "@types/service-worker-mock": "^2.0.4",
     "browserify": "^17.0.0",
-    "jasmine": "^5.1.0",
     "jasmine-core": "^5.1.1",
-    "karma-browserify": "^8.1.0",
-    "karma-jasmine": "^5.1.0",
-    "karma-serviceworker-jasmine": "^1.0.0",
-    "karma-typescript": "^5.5.4",
+    "karma": "^6.4.2",
     "parcel": "^2.10.3",
+    "prettier": "^3.1.1",
     "requirejs": "^2.3.6",
-    "service-worker-mock": "^2.0.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.2"
   }

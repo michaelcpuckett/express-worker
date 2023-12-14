@@ -2,7 +2,7 @@ const broadcastChannel = new BroadcastChannel('sw-messages');
 
 var window = self;
 
-// Load Jasmine and the tests.
+// Load Jasmine and the tests into global scope.
 self.importScripts(
   '/base/dist/express-worker.umd.js',
   '/base/node_modules/jasmine-core/lib/jasmine-core/jasmine.js',
@@ -46,7 +46,7 @@ self.addEventListener('activate', () => {
       type: 'test-results',
       data: {
         id: '1',
-        description: 'test',
+        description: 'Jasmine Tests',
         suite: [],
         log: [],
         success: execution.overallStatus === 'passed',

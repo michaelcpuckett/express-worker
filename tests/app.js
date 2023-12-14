@@ -18,8 +18,6 @@ const unregisterServiceWorkers = async () => {
           );
         }
 
-        console.log('Unregistered any service workers.');
-
         resolve();
       });
   });

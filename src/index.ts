@@ -112,9 +112,7 @@ export type ExpressWorkerResponse = Omit<
   _self: _ExpressWorkerResponse;
   body: string;
   headers: Headers;
-  url: string;
-  method: string;
-  status: (code: number) => ExpressWorkerResponse;
+  status: number & ((code: number) => ExpressWorkerResponse);
   set: (key: string, value: string) => ExpressWorkerResponse;
   html: (data: string) => ExpressWorkerResponse;
   text: (data: string) => ExpressWorkerResponse;
@@ -226,6 +224,10 @@ const responseProxyConfig: ProxyHandler<_ExpressWorkerResponse> = {
     return target[key];
   },
   set: (target, key, value) => {
+    if (key === 'status') {
+      target.__status(value);
+    }
+
     if (key === 'body') {
       target._body = value;
     } else {

@@ -38,9 +38,7 @@ export type ExpressWorkerResponse = Omit<_ExpressWorkerResponse, 'body' | 'heade
     _self: _ExpressWorkerResponse;
     body: string;
     headers: Headers;
-    url: string;
-    method: string;
-    status: (code: number) => ExpressWorkerResponse;
+    status: number & ((code: number) => ExpressWorkerResponse);
     set: (key: string, value: string) => ExpressWorkerResponse;
     html: (data: string) => ExpressWorkerResponse;
     text: (data: string) => ExpressWorkerResponse;
