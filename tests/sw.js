@@ -2,6 +2,7 @@ const broadcastChannel = new BroadcastChannel('sw-messages');
 
 var window = self;
 
+// Load Jasmine and the tests.
 self.importScripts(
   '/base/dist/express-worker.umd.js',
   '/base/node_modules/jasmine-core/lib/jasmine-core/jasmine.js',
@@ -29,11 +30,12 @@ self.addEventListener('activate', () => {
 
   const jasmineEnv = jasmine.getEnv();
 
-  // Required.
+  // Implement the required function.
   jasmineEnv.specFilter = () => {
     return true;
   };
 
+  // Run the tests and report the results to the original window.
   jasmineEnv.execute().then((execution) => {
     broadcastChannel.postMessage({
       type: 'info',
