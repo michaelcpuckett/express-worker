@@ -2,7 +2,8 @@
 
 ## What is ExpressWorker?
 
-ExpressWorker provides a simple [Express](https://expressjs.com/)-like API for handling requests inside a Service Worker.
+ExpressWorker provides a simple [Express.js](https://expressjs.com/)-like API
+for handling requests inside a Service Worker.
 
 ## Installation
 
@@ -22,7 +23,8 @@ After registering the service worker, ExpressWorker will handle all requests.
 
 ## Serving Dynamic Pages
 
-You can use Express-style path params and a server-side templating engine such as `react-dom/server` or `@lit-labs/ssr` to produce dynamic HTML output.
+You can use Express-style path params and a server-side templating engine such
+as `react-dom/server` or `@lit-labs/ssr` to produce dynamic HTML output.
 
 For example:
 
@@ -82,7 +84,8 @@ app.get('*', (req, res) => {
 
 ## Applying Middleware
 
-Middleware handlers are called before other request handlers, so they can be used to add properties to `req` that will be present downstream.
+Middleware handlers are called before other request handlers, so they can be
+used to add properties to `req` that will be present downstream.
 
 Here's a middleware handler to normalize FormData as `req.data`:
 
@@ -103,7 +106,8 @@ app.use(function QueryStringMiddleware(req) {
 });
 ```
 
-If you add additional properties to `req`, then you can wrap request handlers with `applyAdditionalRequestProperties` to make TypeScript aware of them.
+If you add additional properties to `req`, then you can wrap request handlers
+with `applyAdditionalRequestProperties` to make TypeScript aware of them.
 
 ## Differences from Express
 

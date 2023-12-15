@@ -3,5 +3,6 @@
   "trailingComma": "all",
   "singleQuote": true,
   "printWidth": 80,
-  "singleAttributePerLine": true
+  "singleAttributePerLine": true,
+  "proseWrap": "always"
 }
