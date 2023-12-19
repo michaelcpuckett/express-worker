@@ -24,15 +24,6 @@ export type ExpressWorkerRequest = Omit<Request, 'body'> & {
     _self: _ExpressWorkerRequest;
     body: string;
     params: Record<string, string>;
-    headers: Headers;
-    url: string;
-    method: string;
-    formData: () => Promise<FormData>;
-    arrayBuffer: () => Promise<ArrayBuffer>;
-    html: () => Promise<string>;
-    text: () => Promise<string>;
-    json: () => Promise<unknown>;
-    blob: () => Promise<Blob>;
 };
 export type ExpressWorkerResponse = Omit<_ExpressWorkerResponse, 'body' | 'headers'> & {
     _self: _ExpressWorkerResponse;

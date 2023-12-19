@@ -91,15 +91,6 @@ export type ExpressWorkerRequest = Omit<Request, 'body'> & {
   _self: _ExpressWorkerRequest;
   body: string;
   params: Record<string, string>;
-  headers: Headers;
-  url: string;
-  method: string;
-  formData: () => Promise<FormData>;
-  arrayBuffer: () => Promise<ArrayBuffer>;
-  html: () => Promise<string>;
-  text: () => Promise<string>;
-  json: () => Promise<unknown>;
-  blob: () => Promise<Blob>;
 };
 
 /**
@@ -140,40 +131,14 @@ type PathArray = [string, ExpressWorkerHandler][];
  */
 const requestProxyConfig: ProxyHandler<_ExpressWorkerRequest> = {
   get: (target, key) => {
-    if (key === 'formData') {
-      return target._self.formData.bind(target._self);
+    if (key === 'params') {
+      return target.params;
     }
 
-    if (key === 'blob') {
-      return target._self.blob.bind(target._self);
-    }
+    const value = target._self[key];
 
-    if (key === 'json') {
-      return target._self.json.bind(target._self);
-    }
-
-    if (key === 'text') {
-      return target._self.text.bind(target._self);
-    }
-
-    if (key === 'arrayBuffer') {
-      return target._self.arrayBuffer.bind(target._self);
-    }
-
-    if (key === 'body') {
-      return target._self.body;
-    }
-
-    if (key === 'headers') {
-      return target._self.headers;
-    }
-
-    if (key === 'url') {
-      return target._self.url;
-    }
-
-    if (key === 'method') {
-      return target._self.method;
+    if (typeof value === 'function') {
+      return target._self[key].bind(target._self);
     }
 
     return target[key];
