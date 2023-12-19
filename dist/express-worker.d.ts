@@ -50,8 +50,11 @@ export interface ExpressWorkerHandler {
     (req: ExpressWorkerRequest, res: ExpressWorkerResponse): void | Promise<void>;
 }
 export class ExpressWorker {
+    _debug: boolean;
+    _forward: boolean;
     constructor(options?: {
         debug?: boolean;
+        forward?: boolean;
     });
     get(path: string, handler: ExpressWorkerHandler): void;
     post(path: string, handler: ExpressWorkerHandler): void;

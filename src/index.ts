@@ -261,7 +261,10 @@ function isModifiedResponse(
  */
 export class ExpressWorker {
   /** Whether to display logs in the console. */
-  private debug = false;
+  _debug = false;
+
+  /** Whether to forward requests to the network. */
+  _forward = false;
 
   /** The paths and handlers for each method. */
   private paths: {
@@ -282,12 +285,16 @@ export class ExpressWorker {
 
   private boundFetchHandler = this.handleFetch.bind(this);
 
-  constructor(options?: { debug?: boolean }) {
+  constructor(options?: { debug?: boolean; forward?: boolean }) {
     self.addEventListener('fetch', this.boundFetchHandler);
 
     if (options?.debug) {
-      this.debug = true;
+      this._debug = true;
       console.log('ExpressWorker initialized');
+    }
+
+    if (options?.forward) {
+      this._forward = true;
     }
   }
 
@@ -402,12 +409,16 @@ export class ExpressWorker {
     }
 
     if (!hasBeenHandled) {
+      if (this._forward) {
+        return fetch(request);
+      }
+
       return new Response('Not Found', { status: 404 });
     }
 
     const { _body, _status, _headers, _blob, _redirect } = res;
 
-    if (this.debug) {
+    if (this._debug) {
       console.log(this, req._self, res._self);
     }
 

@@ -6,9 +6,10 @@ describe('Service Worker', function () {
   describe('handleRequest', () => {
     afterEach(() => {
       expressWorker.__reset();
+      expressWorker._forward = false;
     });
 
-    it('Without a matching route, should return a 404', async () => {
+    it('Without a matching route, and with `forward` set to false, should return a 404', async () => {
       const expectedBody = 'Not Found';
 
       const response = await new Promise((resolve) => {
@@ -25,7 +26,7 @@ describe('Service Worker', function () {
         broadcastChannel.postMessage({
           type: 'fetch-without-body',
           data: {
-            url: '/test',
+            url: '/base/tests/exists.html',
             method: 'GET',
           },
         });
@@ -33,6 +34,35 @@ describe('Service Worker', function () {
 
       expect(response.body).toBe(expectedBody);
       expect(response.status).toBe(404);
+    });
+
+    it('Without a matching route, but with `forward` set to true, should return HTML file contents', async () => {
+      const expectedBody = 'Hello world from /tests/exists.html';
+
+      expressWorker._forward = true;
+
+      const response = await new Promise((resolve) => {
+        broadcastChannel.addEventListener(
+          'message',
+          (event) => {
+            if (event.data.type === 'fetch-result') {
+              resolve(event.data.data);
+            }
+          },
+          { once: true },
+        );
+
+        broadcastChannel.postMessage({
+          type: 'fetch-without-body',
+          data: {
+            url: '/base/tests/exists.html',
+            method: 'GET',
+          },
+        });
+      });
+
+      expect(response.body.trim()).toBe(expectedBody);
+      expect(response.status).toBe(200);
     });
 
     it('Without modifying the response, should return a 200 with an empty body', async () => {

@@ -1,5 +1,3 @@
-const fs = require('fs');
-
 module.exports = function (config) {
   config.set({
     customHeaders: [
@@ -12,6 +10,7 @@ module.exports = function (config) {
     files: [
       'tests/app.js',
       'tests/context.html',
+      'tests/exists.html',
       {
         pattern: 'dist/express-worker.umd.js',
         watched: true,

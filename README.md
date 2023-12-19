@@ -109,6 +109,17 @@ app.use(function QueryStringMiddleware(req) {
 If you add additional properties to `req`, then you can wrap request handlers
 with `applyAdditionalRequestProperties` to make TypeScript aware of them.
 
+## Forwarding Requests to a Server
+
+You can initialize an ExpressWorker app with `{ forward: true }` to forward
+non-matching requests to a server.
+
+```ts
+const app = new ExpressWorker({ forward: true });
+```
+
+Otherwise, requests will be 404'd by the service worker.
+
 ## Differences from Express
 
 - `req` inherits from native `Request` and appends properties:
@@ -125,6 +136,7 @@ with `applyAdditionalRequestProperties` to make TypeScript aware of them.
 - No support for `next()` function.
 - No need for `listen()` method.
 - No support for rendering engines or other advanced features.
+- Initialization only supports `{ forward: true }`.
 
 ## Examples
 
