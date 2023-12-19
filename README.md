@@ -87,17 +87,19 @@ app.get('*', (req, res) => {
 Middleware handlers are called before other request handlers, so they can be
 used to add properties to `req` that will be present downstream.
 
-Here's a middleware handler to normalize FormData as `req.data`:
+Here's a simple middleware handler to normalize FormData as `req.data`:
 
 ```ts
 app.use(function FormDataMiddleware(req) {
   if (req.headers.get('Content-Type') === 'multipart/form-data') {
-    req.data = Object.fromEntries(Array.from(req.formData.entries()));
+    req.data = Object.fromEntries(Array.from(req.formData.entries())).map(
+      ([key, value]) => [key, value.toString()],
+    );
   }
 });
 ```
 
-Here's a middleware handler to normalize a query string as `req.query`:
+Here's a simple middleware handler to normalize the query string as `req.query`:
 
 ```ts
 app.use(function QueryStringMiddleware(req) {
@@ -106,8 +108,27 @@ app.use(function QueryStringMiddleware(req) {
 });
 ```
 
-If you add additional properties to `req`, then you can wrap request handlers
-with `applyAdditionalRequestProperties` to make TypeScript aware of them.
+If you add additional properties to `req`, then you can wrap handlers with
+`applyAdditionalRequestProperties` to make TypeScript aware of them:
+
+```ts
+import { applyAdditionalRequestProperties } from '@express-worker/app';
+
+app.get(
+  '/cats/:id',
+  applyAdditionalRequestProperties<{
+    data: Record<string, string>;
+    query: Record<string, string>;
+  }>((req, res) => {
+    // TypeScript now knows these are defined.
+    console.log(req.query);
+    console.log(req.data);
+
+    // TypeScript is still aware of `req.params`.
+    console.log(req.params.id);
+  }),
+);
+```
 
 ## Forwarding Requests to a Server
 
@@ -118,7 +139,9 @@ non-matching requests to a server.
 const app = new ExpressWorker({ forward: true });
 ```
 
-Otherwise, requests will be 404'd by the service worker.
+Note that any catch-all handlers will prevent requests from being forwarded.
+With neither `{ forward: true }` nor a catch-all handler, requests will error as
+normal.
 
 ## Differences from Express
 

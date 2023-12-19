@@ -67,6 +67,6 @@ export class ExpressWorker {
     isMethodEnum(method: string): method is 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
     __reset(): void;
 }
-export function applyAdditionalRequestProperties<T extends Object>(handler: (req: ExpressWorkerRequest & T, res: ExpressWorkerResponse) => Promise<void>): (req: ExpressWorkerRequest, res: ExpressWorkerResponse) => Promise<void>;
+export function applyAdditionalRequestProperties<T extends Object>(handler: (req: ExpressWorkerRequest & T, res: ExpressWorkerResponse) => void | Promise<void>): (req: ExpressWorkerRequest, res: ExpressWorkerResponse) => Promise<void>;
 
 //# sourceMappingURL=express-worker.d.ts.map

@@ -480,7 +480,7 @@ export function applyAdditionalRequestProperties<T extends Object>(
   handler: (
     req: ExpressWorkerRequest & T,
     res: ExpressWorkerResponse,
-  ) => Promise<void>,
+  ) => void | Promise<void>,
 ) {
   return async (req: ExpressWorkerRequest, res: ExpressWorkerResponse) => {
     return await handler(req as ExpressWorkerRequest & T, res);
