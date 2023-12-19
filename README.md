@@ -50,7 +50,7 @@ const handleStaticFile = (req, res) => {
     res.status = cachedResponse.status;
 
     for (const [key, value] of cachedResponse.headers.entries()) {
-      res.headers.set(key, value);
+      res.set(key, value);
     }
 
     const body = await cachedResponse.text();

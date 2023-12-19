@@ -348,7 +348,7 @@ export class ExpressWorker {
       await middleware(req, res);
 
       if (res._ended) {
-        continue;
+        break;
       }
     }
 
@@ -356,7 +356,7 @@ export class ExpressWorker {
 
     for (const [path, handler] of this.paths[request.method]) {
       if (res._ended) {
-        continue;
+        break;
       }
 
       if (path === '*') {
@@ -388,7 +388,7 @@ export class ExpressWorker {
     if (!hasBeenHandled) {
       for (const [path, handler] of this.paths[request.method]) {
         if (res._ended) {
-          continue;
+          break;
         }
 
         if (path !== '*') {
@@ -396,7 +396,13 @@ export class ExpressWorker {
         }
 
         await handler(req, res);
+
+        hasBeenHandled = true;
       }
+    }
+
+    if (!hasBeenHandled) {
+      return new Response('Not Found', { status: 404 });
     }
 
     const { _body, _status, _headers, _blob, _redirect } = res;
@@ -409,11 +415,7 @@ export class ExpressWorker {
       return Response.redirect(_redirect, 303);
     }
 
-    const content = _body || _blob;
-
-    if (!content) {
-      return new Response('Not found', { status: 404 });
-    }
+    const content = _blob || _body || '';
 
     return new Response(content, {
       status: _status,

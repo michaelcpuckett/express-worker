@@ -8,6 +8,64 @@ describe('Service Worker', function () {
       expressWorker.__reset();
     });
 
+    it('Without a matching route, should return a 404', async () => {
+      const expectedBody = 'Not Found';
+
+      const response = await new Promise((resolve) => {
+        broadcastChannel.addEventListener(
+          'message',
+          (event) => {
+            if (event.data.type === 'fetch-result') {
+              resolve(event.data.data);
+            }
+          },
+          { once: true },
+        );
+
+        broadcastChannel.postMessage({
+          type: 'fetch-without-body',
+          data: {
+            url: '/test',
+            method: 'GET',
+          },
+        });
+      });
+
+      expect(response.body).toBe(expectedBody);
+      expect(response.status).toBe(404);
+    });
+
+    it('Without modifying the response, should return a 200 with an empty body', async () => {
+      const expectedBody = '';
+
+      expressWorker.get('/test', (req, res) => {
+        // Handled.
+      });
+
+      const response = await new Promise((resolve) => {
+        broadcastChannel.addEventListener(
+          'message',
+          (event) => {
+            if (event.data.type === 'fetch-result') {
+              resolve(event.data.data);
+            }
+          },
+          { once: true },
+        );
+
+        broadcastChannel.postMessage({
+          type: 'fetch-without-body',
+          data: {
+            url: '/test',
+            method: 'GET',
+          },
+        });
+      });
+
+      expect(response.body).toBe(expectedBody);
+      expect(response.status).toBe(200);
+    });
+
     it('Should `send` a GET to an endpoint', async () => {
       const expectedBody = 'Hello World! [GET]';
 
@@ -340,7 +398,7 @@ describe('Service Worker', function () {
 
       expressWorker.get('/test', (req, res) => {
         res.status = expectedStatus;
-        res.headers.set(expectedHeader, expectedHeaderValue);
+        res.set(expectedHeader, expectedHeaderValue);
         res.body = expectedBody;
         res.end();
       });
