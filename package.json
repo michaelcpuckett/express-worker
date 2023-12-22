@@ -13,7 +13,6 @@
     "format": "prettier --config .prettierrc \"{src,tests}/*.{ts,js}\" --write",
     "build": "parcel build --no-scope-hoist & npm run browserify",
     "test": "karma start --single-run",
-    "start": "karma start",
     "browserify": "browserify ./dist/express-worker.js --standalone GlobalScope -o ./dist/express-worker.umd.js"
   },
   "express-worker": "dist/express-worker.js",
