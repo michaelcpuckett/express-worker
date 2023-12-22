@@ -1,18 +1,26 @@
-const expressWorker = new ExpressWorker.ExpressWorker();
+// Made available through `global.d.ts`.
+const expressWorker = new GlobalScope.ExpressWorker();
+
+// Simplified Response, passed from the original window.
+interface FakeResponse {
+  body: string;
+  status: number;
+  headers: Record<string, string>;
+}
 
 describe('Service Worker', function () {
   const broadcastChannel = new BroadcastChannel('sw-messages');
 
   describe('handleRequest', () => {
     afterEach(() => {
+      // Clear all routes.
       expressWorker.__reset();
-      expressWorker._forward = false;
     });
 
-    it('Without a matching route, and with `forward` set to false, should return a 404', async () => {
-      const expectedBody = 'Not Found';
+    it('Without a matching route, should fetch via the network', async () => {
+      const expectedBody = 'Hello world from /tests/responses/exists.html';
 
-      const response = await new Promise((resolve) => {
+      const response: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -26,36 +34,7 @@ describe('Service Worker', function () {
         broadcastChannel.postMessage({
           type: 'fetch-without-body',
           data: {
-            url: '/base/tests/exists.html',
-            method: 'GET',
-          },
-        });
-      });
-
-      expect(response.body).toBe(expectedBody);
-      expect(response.status).toBe(404);
-    });
-
-    it('Without a matching route, but with `forward` set to true, should return HTML file contents', async () => {
-      const expectedBody = 'Hello world from /tests/exists.html';
-
-      expressWorker._forward = true;
-
-      const response = await new Promise((resolve) => {
-        broadcastChannel.addEventListener(
-          'message',
-          (event) => {
-            if (event.data.type === 'fetch-result') {
-              resolve(event.data.data);
-            }
-          },
-          { once: true },
-        );
-
-        broadcastChannel.postMessage({
-          type: 'fetch-without-body',
-          data: {
-            url: '/base/tests/exists.html',
+            url: '/base/tests/responses/exists.html',
             method: 'GET',
           },
         });
@@ -72,7 +51,7 @@ describe('Service Worker', function () {
         // Handled.
       });
 
-      const response = await new Promise((resolve) => {
+      const response: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -103,7 +82,7 @@ describe('Service Worker', function () {
         res.send(expectedBody);
       });
 
-      const response = await new Promise((resolve) => {
+      const response: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -133,7 +112,7 @@ describe('Service Worker', function () {
         res.send(expectedBody);
       });
 
-      const response = await new Promise((resolve) => {
+      const response: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -168,7 +147,7 @@ describe('Service Worker', function () {
       const formData = new FormData();
       formData.append('foo', expectedBody);
 
-      const response = await new Promise((resolve) => {
+      const response: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -200,7 +179,7 @@ describe('Service Worker', function () {
         res.send(expectedBody);
       });
 
-      const response = await new Promise((resolve) => {
+      const response: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -231,7 +210,7 @@ describe('Service Worker', function () {
         res.send(expectedBody);
       });
 
-      const response = await new Promise((resolve) => {
+      const response: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -262,7 +241,7 @@ describe('Service Worker', function () {
         res.send(expectedBody);
       });
 
-      const response = await new Promise((resolve) => {
+      const response: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -293,7 +272,7 @@ describe('Service Worker', function () {
         res.json(expectedBody);
       });
 
-      const response = await new Promise((resolve) => {
+      const response: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -329,7 +308,7 @@ describe('Service Worker', function () {
           .send(expectedBody);
       });
 
-      const response = await new Promise((resolve) => {
+      const response: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -361,7 +340,7 @@ describe('Service Worker', function () {
         res.send(req.params.foo);
       });
 
-      const response = await new Promise((resolve) => {
+      const response: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -388,15 +367,24 @@ describe('Service Worker', function () {
     it('Supports `use` middleware', async () => {
       const expectedBody = 'baz';
 
-      expressWorker.use((req) => {
-        req.foo = expectedBody;
-      });
+      expressWorker.use(
+        GlobalScope.ExpressWorker.applyAdditionalRequestProperties<{
+          foo: string;
+        }>((req) => {
+          req.foo = expectedBody;
+        }),
+      );
 
-      expressWorker.get('/test', (req, res) => {
-        res.send(req.foo);
-      });
+      expressWorker.get(
+        '/test',
+        GlobalScope.ExpressWorker.applyAdditionalRequestProperties<{
+          foo: string;
+        }>((req, res) => {
+          res.send(req.foo);
+        }),
+      );
 
-      const response = await new Promise((resolve) => {
+      const response: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -420,44 +408,6 @@ describe('Service Worker', function () {
       expect(response.body).toBe(expectedBody);
     });
 
-    it('Supports setting values directly on response object', async () => {
-      const expectedStatus = 201;
-      const expectedHeader = 'x-foo';
-      const expectedHeaderValue = 'bar';
-      const expectedBody = 'baz';
-
-      expressWorker.get('/test', (req, res) => {
-        res.status = expectedStatus;
-        res.set(expectedHeader, expectedHeaderValue);
-        res.body = expectedBody;
-        res.end();
-      });
-
-      const response = await new Promise((resolve) => {
-        broadcastChannel.addEventListener(
-          'message',
-          (event) => {
-            if (event.data.type === 'fetch-result') {
-              return resolve(event.data.data);
-            }
-          },
-          { once: true },
-        );
-
-        broadcastChannel.postMessage({
-          type: 'fetch-without-body',
-          data: {
-            url: `/test`,
-            method: 'GET',
-          },
-        });
-      });
-
-      expect(response.status).toBe(expectedStatus);
-      expect(response.headers[expectedHeader]).toBe(expectedHeaderValue);
-      expect(response.body).toBe(expectedBody);
-    });
-
     it('Supports `redirect` method', async () => {
       const expectedRedirectUrl = '/redirect';
       const expectedRedirectBody = 'redirected';
@@ -470,7 +420,7 @@ describe('Service Worker', function () {
         res.send(expectedRedirectBody);
       });
 
-      const response = await new Promise((resolve) => {
+      const response: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -501,15 +451,15 @@ describe('Service Worker', function () {
       const expectedBody = 'Hello World!';
 
       expressWorker.get('/test', (req, res) => {
-        res.body = expectedBody;
+        res.text(expectedBody);
       });
 
       expressWorker.get('*', (req, res) => {
-        res.status = expected404Status;
-        res.body = expected404Body;
+        res.status(expected404Status);
+        res.text(expected404Body);
       });
 
-      const response404 = await new Promise((resolve) => {
+      const response404: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {
@@ -529,7 +479,7 @@ describe('Service Worker', function () {
         });
       });
 
-      const response = await new Promise((resolve) => {
+      const response: FakeResponse = await new Promise((resolve) => {
         broadcastChannel.addEventListener(
           'message',
           (event) => {

@@ -13,8 +13,8 @@
     "isolatedModules": true,
     "lib": ["ESNext", "webworker", "DOM.Iterable"],
     "target": "ESNext",
-    "outDir": "../dist"
+    "outDir": "."
   },
   "exclude": ["../node_modules"],
-  "include": ["./src/index.ts"]
+  "include": ["*.ts"]
 }

@@ -1,16 +1,31 @@
 module.exports = function (config) {
   config.set({
+    typescriptPreprocessor: {
+      options: {
+        module: 'none',
+        skipLibCheck: true,
+        sourceMap: false,
+        target: 'ES2020',
+        noResolve: true,
+        removeComments: true,
+        concatenateOutput: true,
+      },
+    },
+    preprocessors: {
+      'tests/bootstrap.ts': 'typescript',
+      'tests/service-worker/service-worker.ts': 'typescript',
+      'tests/specs/index.ts': 'typescript',
+    },
     customHeaders: [
       {
-        match: 'sw',
+        match: 'service-worker',
         name: 'Service-Worker-Allowed',
         value: '/',
       },
     ],
     files: [
-      'tests/app.js',
-      'tests/context.html',
-      'tests/exists.html',
+      'tests/responses/exists.html',
+      'tests/bootstrap.ts',
       {
         pattern: 'dist/express-worker.umd.js',
         watched: true,
@@ -18,13 +33,13 @@ module.exports = function (config) {
         served: true,
       },
       {
-        pattern: 'tests/sw.js',
+        pattern: 'tests/service-worker/service-worker.ts',
         watched: true,
         included: false,
         served: true,
       },
       {
-        pattern: 'tests/index.js',
+        pattern: 'tests/specs/index.ts',
         watched: true,
         included: false,
         served: true,

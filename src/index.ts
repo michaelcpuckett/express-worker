@@ -2,114 +2,121 @@ import { Key, pathToRegexp } from 'path-to-regexp';
 
 /**
  * Wraps the native Request object and adds the `params` object.
- * This will be wrapped in a Proxy to provide the default API.
+ *
+ * This will be wrapped in a Proxy to provide direct access to the
+ * native Request object.
  **/
 export class _ExpressWorkerRequest {
-  _self: Request;
   params: Record<string, string> = {};
-
-  constructor(_self: Request) {
-    this._self = _self;
-  }
+  constructor(readonly _self: Request) {}
 }
 
 /**
- * Extends the native Response object and adds familiar Express-style methods.
+ * Provides an API for modifying the response before it is sent.
  */
-class _ExpressWorkerResponse extends Response {
-  _body = '';
-  _blob: Blob | null = null;
-  _redirect = '';
-  _ended = false;
-  _headers = new Headers();
-  _status = 200;
+class ExpressWorkerResponse {
+  /** Whether the response has been ended and should not be modified. */
+  ended = false;
 
-  __html(data: string) {
+  private _body = '';
+  private _blob: Blob | null = null;
+  private _redirect = '';
+  private _headers = new Headers();
+  private _status = 200;
+
+  /* Populates the body and sets the `Content-Type` header to HTML. */
+  html(data: string) {
     this._body = data;
     this._headers.set('Content-Type', 'text/html');
     return this;
   }
 
-  __text(data: string) {
+  /* Populates the body and sets the `Content-Type` header to text. */
+  text(data: string) {
     this._body = data;
     this._headers.set('Content-Type', 'text/plain');
     return this;
   }
 
-  __json(data: unknown) {
+  /* Populates the body and sets the `Content-Type` header to JSON. */
+  json(data: unknown) {
     this._body = JSON.stringify(data);
     this._headers.set('Content-Type', 'application/json');
     return this;
   }
 
-  __blob(blob: Blob) {
+  /**
+   * Populates the body with a Blob and sets the `Content-Type` header to the
+   * Blob's type.
+   */
+  blob(blob: Blob) {
     this._blob = blob;
     this._headers.set('Content-Type', blob.type);
     return this;
   }
 
-  __send(data: string | unknown) {
+  /**
+   * Populates the body, sets the appropriate `Content-Type` header, and ends
+   * the response.
+   **/
+  send(data: string | unknown) {
     if (typeof data === 'string') {
       if (!this._headers.has('Content-Type')) {
-        this.__html(data);
+        this.html(data);
       } else {
         this._body = data;
       }
     } else {
-      this.__json(data);
+      this.json(data);
     }
 
     this.end();
     return this;
   }
 
-  __status(code: number) {
+  /** Sets the status code. */
+  status(code: number) {
     this._status = code;
     return this;
   }
 
+  /** Sets a Header key-value pair. */
   set(key: string, value: string) {
     this._headers.set(key, value);
     return this;
   }
 
+  /** Ends the response. */
   end() {
-    this._ended = true;
+    this.ended = true;
     return this;
   }
 
+  /** Mark the request as a redirect. */
   redirect(url: string) {
     this._redirect = url;
     return this;
+  }
+
+  /** Generates a Response object from the ExpressWorkerResponse. */
+  _toResponse() {
+    if (this._redirect) {
+      return Response.redirect(this._redirect, 303);
+    }
+
+    return new Response(this._blob ?? this._body, {
+      status: this._status,
+      headers: this._headers,
+    });
   }
 }
 
 /**
  * The type of the ExpressWorkerRequest object when wrapped in a Proxy.
  */
-export type ExpressWorkerRequest = Omit<Request, 'body'> & {
+export type ExpressWorkerRequest = Request & {
   _self: _ExpressWorkerRequest;
-  body: string;
   params: Record<string, string>;
-};
-
-/**
- * The type of the ExpressWorkerResponse object when wrapped in a Proxy.
- */
-export type ExpressWorkerResponse = Omit<
-  _ExpressWorkerResponse,
-  'body' | 'headers'
-> & {
-  _self: _ExpressWorkerResponse;
-  body: string;
-  headers: Headers;
-  status: number | ((code: number) => ExpressWorkerResponse);
-  set: (key: string, value: string) => ExpressWorkerResponse;
-  html: (data: string) => ExpressWorkerResponse;
-  text: (data: string) => ExpressWorkerResponse;
-  json: (data: unknown) => ExpressWorkerResponse;
-  blob: (blob: Blob) => _ExpressWorkerResponse;
-  send: (data: string | unknown) => ExpressWorkerResponse;
 };
 
 /**
@@ -127,7 +134,8 @@ export interface ExpressWorkerHandler {
 type PathArray = [string, ExpressWorkerHandler][];
 
 /**
- * The options for the ExpressWorkerRequest Proxy.
+ * The options for the ExpressWorkerRequest Proxy. This allows direct access to
+ * the native Request object, along with the `params` object.
  */
 const requestProxyConfig: ProxyHandler<_ExpressWorkerRequest> = {
   get: (target, key) => {
@@ -135,90 +143,21 @@ const requestProxyConfig: ProxyHandler<_ExpressWorkerRequest> = {
       return target.params;
     }
 
-    const value = target._self[key];
+    const value = target._self[key as keyof typeof target._self];
 
     if (typeof value === 'function') {
-      return target._self[key].bind(target._self);
+      return value.bind(target._self);
     }
 
-    return target[key];
+    return target[key as keyof typeof target];
   },
 };
 
 /**
- * The options for the ExpressWorkerResponse Proxy.
+ * Guards for whether a request is a proxied ExpressWorkerRequest.
  */
-const responseProxyConfig: ProxyHandler<_ExpressWorkerResponse> = {
-  get: (target, key) => {
-    if (key === 'body') {
-      return target._body;
-    }
-
-    if (key === 'headers') {
-      return target._headers;
-    }
-
-    if (key === 'blob') {
-      return target.__blob;
-    }
-
-    if (key === 'html') {
-      return target.__html;
-    }
-
-    if (key === 'text') {
-      return target.__text;
-    }
-
-    if (key === 'json') {
-      return target.__json;
-    }
-
-    if (key === 'send') {
-      return target.__send;
-    }
-
-    if (key === 'status') {
-      return target.__status;
-    }
-
-    if (key === '_self') {
-      return target;
-    }
-
-    return target[key];
-  },
-  set: (target, key, value) => {
-    if (key === 'status') {
-      target.__status(value);
-    } else if (key === 'body') {
-      target._body = value;
-    } else {
-      target[key] = value;
-    }
-
-    return true;
-  },
-};
-
-/**
- * Guards for whether a request is an ExpressWorkerRequest.
- */
-function isModifiedRequest(request: unknown): request is ExpressWorkerRequest {
-  return request instanceof _ExpressWorkerRequest && 'params' in request;
-}
-
-/**
- * Guards for whether a response is an ExpressWorkerResponse.
- */
-function isModifiedResponse(
-  response: unknown,
-): response is ExpressWorkerResponse {
-  return (
-    response instanceof _ExpressWorkerResponse &&
-    '_body' in response &&
-    '_headers' in response
-  );
+function isReq(request: unknown): request is ExpressWorkerRequest {
+  return request instanceof _ExpressWorkerRequest;
 }
 
 /**
@@ -227,9 +166,6 @@ function isModifiedResponse(
 export class ExpressWorker {
   /** Whether to display logs in the console. */
   _debug = false;
-
-  /** Whether to forward requests to the network. */
-  _forward = false;
 
   /** The paths and handlers for each method. */
   private paths: {
@@ -250,16 +186,12 @@ export class ExpressWorker {
 
   private boundFetchHandler = this.handleFetch.bind(this);
 
-  constructor(options?: { debug?: boolean; forward?: boolean }) {
+  constructor(options?: { debug?: boolean }) {
     self.addEventListener('fetch', this.boundFetchHandler);
 
     if (options?.debug) {
       this._debug = true;
       console.log('ExpressWorker initialized');
-    }
-
-    if (options?.forward) {
-      this._forward = true;
     }
   }
 
@@ -306,28 +238,28 @@ export class ExpressWorker {
       requestProxyConfig,
     );
 
-    const res = new Proxy(new _ExpressWorkerResponse(), responseProxyConfig);
+    const res = new ExpressWorkerResponse();
 
-    if (!isModifiedRequest(req)) {
-      throw new Error('Request must be a modified request');
-    }
-
-    if (!isModifiedResponse(res)) {
-      throw new Error('Response must be a modified response');
+    if (!isReq(req)) {
+      throw new Error('Request must be a proxied ExpressWorkerRequest.');
     }
 
     for (const middleware of this.paths.USE) {
       await middleware(req, res);
 
-      if (res._ended) {
+      if (res.ended) {
         break;
       }
     }
 
     let hasBeenHandled = false;
 
+    if (!this.isMethodEnum(request.method)) {
+      throw new Error('Must be a valid method.');
+    }
+
     for (const [path, handler] of this.paths[request.method]) {
-      if (res._ended) {
+      if (res.ended) {
         break;
       }
 
@@ -359,7 +291,7 @@ export class ExpressWorker {
 
     if (!hasBeenHandled) {
       for (const [path, handler] of this.paths[request.method]) {
-        if (res._ended) {
+        if (res.ended) {
           break;
         }
 
@@ -374,29 +306,10 @@ export class ExpressWorker {
     }
 
     if (!hasBeenHandled) {
-      if (this._forward) {
-        return fetch(request);
-      }
-
-      return new Response('Not Found', { status: 404 });
+      return fetch(request);
     }
 
-    const { _body, _status, _headers, _blob, _redirect } = res;
-
-    if (this._debug) {
-      console.log(this, req._self, res._self);
-    }
-
-    if (_redirect) {
-      return Response.redirect(_redirect, 303);
-    }
-
-    const content = _blob || _body || '';
-
-    return new Response(content, {
-      status: _status,
-      headers: _headers,
-    });
+    return res._toResponse();
   }
 
   /** Handles the fetch event. */
@@ -436,18 +349,18 @@ export class ExpressWorker {
       USE: [],
     };
   }
-}
 
-/**
- * Generate a modified handler that includes any middleware properties.
- */
-export function applyAdditionalRequestProperties<T extends Object>(
-  handler: (
-    req: ExpressWorkerRequest & T,
-    res: ExpressWorkerResponse,
-  ) => void | Promise<void>,
-) {
-  return async (req: ExpressWorkerRequest, res: ExpressWorkerResponse) => {
-    return await handler(req as ExpressWorkerRequest & T, res);
-  };
+  /**
+   * Generate a modified handler that includes any middleware properties.
+   */
+  static applyAdditionalRequestProperties<T extends Object>(
+    handler: (
+      req: ExpressWorkerRequest & T,
+      res: ExpressWorkerResponse,
+    ) => void | Promise<void>,
+  ) {
+    return async (req: ExpressWorkerRequest, res: ExpressWorkerResponse) => {
+      return await handler(req as ExpressWorkerRequest & T, res);
+    };
+  }
 }

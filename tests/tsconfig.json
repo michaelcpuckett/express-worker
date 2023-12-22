@@ -11,10 +11,10 @@
     "removeComments": true,
     "noLib": false,
     "isolatedModules": true,
-    "lib": ["ESNext", "webworker", "DOM.Iterable"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "target": "ESNext",
-    "outDir": "../dist"
+    "outDir": "."
   },
   "exclude": ["../node_modules"],
-  "include": ["./src/index.ts"]
+  "include": ["*.ts"]
 }

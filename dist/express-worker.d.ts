@@ -1,51 +1,32 @@
 export class _ExpressWorkerRequest {
-    _self: Request;
+    readonly _self: Request;
     params: Record<string, string>;
     constructor(_self: Request);
 }
-declare class _ExpressWorkerResponse extends Response {
-    _body: string;
-    _blob: Blob | null;
-    _redirect: string;
-    _ended: boolean;
-    _headers: Headers;
-    _status: number;
-    __html(data: string): this;
-    __text(data: string): this;
-    __json(data: unknown): this;
-    __blob(blob: Blob): this;
-    __send(data: string | unknown): this;
-    __status(code: number): this;
+declare class ExpressWorkerResponse {
+    ended: boolean;
+    html(data: string): this;
+    text(data: string): this;
+    json(data: unknown): this;
+    blob(blob: Blob): this;
+    send(data: string | unknown): this;
+    status(code: number): this;
     set(key: string, value: string): this;
     end(): this;
     redirect(url: string): this;
+    _toResponse(): Response;
 }
-export type ExpressWorkerRequest = Omit<Request, 'body'> & {
+export type ExpressWorkerRequest = Request & {
     _self: _ExpressWorkerRequest;
-    body: string;
     params: Record<string, string>;
-};
-export type ExpressWorkerResponse = Omit<_ExpressWorkerResponse, 'body' | 'headers'> & {
-    _self: _ExpressWorkerResponse;
-    body: string;
-    headers: Headers;
-    status: number | ((code: number) => ExpressWorkerResponse);
-    set: (key: string, value: string) => ExpressWorkerResponse;
-    html: (data: string) => ExpressWorkerResponse;
-    text: (data: string) => ExpressWorkerResponse;
-    json: (data: unknown) => ExpressWorkerResponse;
-    blob: (blob: Blob) => _ExpressWorkerResponse;
-    send: (data: string | unknown) => ExpressWorkerResponse;
 };
 export interface ExpressWorkerHandler {
     (req: ExpressWorkerRequest, res: ExpressWorkerResponse): void | Promise<void>;
 }
 export class ExpressWorker {
     _debug: boolean;
-    _forward: boolean;
     constructor(options?: {
         debug?: boolean;
-        forward?: boolean;
     });
     get(path: string, handler: ExpressWorkerHandler): void;
     post(path: string, handler: ExpressWorkerHandler): void;
@@ -57,7 +38,7 @@ export class ExpressWorker {
     handleFetch(event: Event): void;
     isMethodEnum(method: string): method is 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
     __reset(): void;
+    static applyAdditionalRequestProperties<T extends Object>(handler: (req: ExpressWorkerRequest & T, res: ExpressWorkerResponse) => void | Promise<void>): (req: ExpressWorkerRequest, res: ExpressWorkerResponse) => Promise<void>;
 }
-export function applyAdditionalRequestProperties<T extends Object>(handler: (req: ExpressWorkerRequest & T, res: ExpressWorkerResponse) => void | Promise<void>): (req: ExpressWorkerRequest, res: ExpressWorkerResponse) => Promise<void>;
 
 //# sourceMappingURL=express-worker.d.ts.map

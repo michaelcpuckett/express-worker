@@ -1,6 +1,6 @@
 {
   "name": "@express-worker/app",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "Express-style routing for Service Workers",
   "main": "dist/express-worker.js",
   "publishConfig": {
@@ -14,7 +14,7 @@
     "build": "parcel build --no-scope-hoist & npm run browserify",
     "test": "karma start --single-run",
     "start": "karma start",
-    "browserify": "browserify ./dist/express-worker.js --standalone ExpressWorker -o ./dist/express-worker.umd.js"
+    "browserify": "browserify ./dist/express-worker.js --standalone GlobalScope -o ./dist/express-worker.umd.js"
   },
   "express-worker": "dist/express-worker.js",
   "types": "dist/express-worker.d.ts",
@@ -45,6 +45,9 @@
     "browserify": "^17.0.0",
     "jasmine-core": "^5.1.1",
     "karma": "^6.4.2",
+    "karma-parcel": "^0.7.3",
+    "karma-typescript": "^5.5.4",
+    "karma-typescript-preprocessor": "^0.4.0",
     "parcel": "^2.10.3",
     "prettier": "^3.1.1",
     "requirejs": "^2.3.6",

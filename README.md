@@ -24,7 +24,7 @@ After registering the service worker, ExpressWorker will handle all requests.
 ## Serving Dynamic Pages
 
 You can use Express-style path params and a server-side templating engine such
-as `react-dom/server` or `@lit-labs/ssr` to produce dynamic HTML output.
+as `react-dom/server` to produce dynamic HTML output.
 
 For example:
 
@@ -39,9 +39,22 @@ app.get('/cats/:id', (req, res) => {
 
 ## Serving Static Resources
 
-Create GET handlers to serve static resources from a cache.
+By default, non-matching requests are forwarded to the network, which can be
+slow. To improve performance, you can cache static resources in the `install`
+event handler and create GET handlers to serve them from the cache.
+
+Here's a simplified example, but you will likely need a more robust solution
+that handles cache invalidation and versioning:
 
 ```ts
+const URLS_TO_CACHE = ['client.js', 'manifest.json', 'style.css'];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open('v1').then((cache) => cache.addAll(URLS_TO_CACHE)),
+  );
+});
+
 const handleStaticFile = (req, res) => {
   const cache = await caches.open('v1');
   const cachedResponse = await cache.match(new URL(req.url).pathname);
@@ -64,14 +77,12 @@ const handleStaticFile = (req, res) => {
   res.end();
 };
 
-const URLS_TO_CACHE = ['client.js', 'manifest.json', 'style.css'];
-
 for (const url of URLS_TO_CACHE) {
   app.get(url, handleStaticFile);
 }
 ```
 
-## Serving 404 Page
+## Serving a 404 Page
 
 Register a catch-all handler to serve a 404 page for all unhandled requests.
 
@@ -108,15 +119,16 @@ app.use(function QueryStringMiddleware(req) {
 });
 ```
 
-If you add additional properties to `req`, then you can wrap handlers with
-`applyAdditionalRequestProperties` to make TypeScript aware of them:
+If you add additional properties to `req`, then you can wrap handlers with the
+static `applyAdditionalRequestProperties` method to make TypeScript aware of
+them:
 
 ```ts
-import { applyAdditionalRequestProperties } from '@express-worker/app';
+import { ExpressWorker } from '@express-worker/app';
 
 app.get(
   '/cats/:id',
-  applyAdditionalRequestProperties<{
+  ExpressWorker.applyAdditionalRequestProperties<{
     data: Record<string, string>;
     query: Record<string, string>;
   }>((req, res) => {
@@ -130,24 +142,10 @@ app.get(
 );
 ```
 
-## Forwarding Requests to a Server
-
-You can initialize an ExpressWorker app with `{ forward: true }` to forward
-non-matching requests to a server.
-
-```ts
-const app = new ExpressWorker({ forward: true });
-```
-
-Note that any catch-all handlers will prevent requests from being forwarded.
-With neither `{ forward: true }` nor a catch-all handler, requests will error as
-normal.
-
 ## Differences from Express
 
-- `req` inherits from native `Request` and appends properties:
-  - `params`
-- `res` inherits from native `Response` and appends methods:
+- `req` works like native `Request` with appended `params` property.
+- `res` has the following Express-like methods:
   - `send()`
   - `text()`
   - `html()`
@@ -159,7 +157,6 @@ normal.
 - No support for `next()` function.
 - No need for `listen()` method.
 - No support for rendering engines or other advanced features.
-- Initialization only supports `{ forward: true }`.
 
 ## Examples
 
