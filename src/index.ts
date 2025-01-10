@@ -22,24 +22,24 @@ class ExpressWorkerResponse {
   private _blob: Blob | null = null;
   private _redirect = '';
   private _headers = new Headers();
-  private _status = 200;
+  private _status: number = 200;
 
   /* Populates the body and sets the `Content-Type` header to HTML. */
-  html(data: string) {
+  html(data: string): ExpressWorkerResponse {
     this._body = data;
     this._headers.set('Content-Type', 'text/html');
     return this;
   }
 
   /* Populates the body and sets the `Content-Type` header to text. */
-  text(data: string) {
+  text(data: string): ExpressWorkerResponse {
     this._body = data;
     this._headers.set('Content-Type', 'text/plain');
     return this;
   }
 
   /* Populates the body and sets the `Content-Type` header to JSON. */
-  json(data: unknown) {
+  json(data: unknown): ExpressWorkerResponse {
     this._body = JSON.stringify(data);
     this._headers.set('Content-Type', 'application/json');
     return this;
@@ -49,7 +49,7 @@ class ExpressWorkerResponse {
    * Populates the body with a Blob and sets the `Content-Type` header to the
    * Blob's type.
    */
-  blob(blob: Blob) {
+  blob(blob: Blob): ExpressWorkerResponse {
     this._blob = blob;
     this._headers.set('Content-Type', blob.type);
     return this;
@@ -59,7 +59,7 @@ class ExpressWorkerResponse {
    * Populates the body, sets the appropriate `Content-Type` header, and ends
    * the response.
    **/
-  send(data: string | unknown) {
+  send(data: string | unknown): ExpressWorkerResponse {
     if (typeof data === 'string') {
       if (!this._headers.has('Content-Type')) {
         this.html(data);
@@ -75,25 +75,25 @@ class ExpressWorkerResponse {
   }
 
   /** Sets the status code. */
-  status(code: number) {
+  status(code: number): ExpressWorkerResponse {
     this._status = code;
     return this;
   }
 
   /** Sets a Header key-value pair. */
-  set(key: string, value: string) {
+  set(key: string, value: string): ExpressWorkerResponse {
     this._headers.set(key, value);
     return this;
   }
 
   /** Ends the response. */
-  end() {
+  end(): ExpressWorkerResponse {
     this.ended = true;
     return this;
   }
 
   /** Mark the request as a redirect. */
-  redirect(url: string) {
+  redirect(url: string): ExpressWorkerResponse {
     this._redirect = url;
     return this;
   }
