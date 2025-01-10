@@ -149,7 +149,7 @@ const requestProxyConfig: ProxyHandler<_ExpressWorkerRequest> = {
       return value.bind(target._self);
     }
 
-    return target[key as keyof typeof target];
+    return value || target[key as keyof _ExpressWorkerRequest];
   },
 };
 
