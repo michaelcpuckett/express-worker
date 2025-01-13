@@ -24,6 +24,13 @@ class ExpressWorkerResponse {
   private _headers = new Headers();
   private _status: number = 200;
 
+  /* Wraps a Response object. */
+  wrap(response: Response) {
+    this._toResponse = () => response;
+    this.end();
+    return this;
+  }
+
   /* Populates the body and sets the `Content-Type` header to HTML. */
   html(data: string): ExpressWorkerResponse {
     this._body = data;

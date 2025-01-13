@@ -5,6 +5,7 @@ export class _ExpressWorkerRequest {
 }
 declare class ExpressWorkerResponse {
     ended: boolean;
+    wrap(response: Response): this;
     html(data: string): ExpressWorkerResponse;
     text(data: string): ExpressWorkerResponse;
     json(data: unknown): ExpressWorkerResponse;
